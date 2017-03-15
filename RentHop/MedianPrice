@@ -1,0 +1,53 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Mar 15 08:34:54 2017
+
+@author: brendontucker
+
+Adopted from Median Rental Prices Matter
+by : olivier
+"""
+
+import numpy as np # linear algebra
+import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
+import matplotlib.pyplot as plt
+
+import seaborn as sns
+
+train_df = pd.read_json("/Users/brendontucker/Kaggle/Data/rentHop_train.json").set_index('listing_id')
+test_df = pd.read_json("/Users/brendontucker/Kaggle/Data/rentHop_test.json").set_index('listing_id')
+
+index1_train = train_df[(train_df.price < 10000) & (train_df.bedrooms <= 4)]
+index1_test = test_df[(test_df.price < 10000) & (test_df.bedrooms <= 4)]
+                        
+palette = {"high": "r", "low":"g", "medium":"orange"} #color dict
+
+for interest in ['low', 'medium', 'high']:
+    plt.scatter(index1_train[index1_train.interest_level==interest].bedrooms, 
+                index1_train[index1_train.interest_level==interest].price, 
+                c = palette[interest])
+sns.boxplot(x="bedrooms", y="price", hue="interest_level", data=index1_train, palette=palette)
+
+
+#totally don't understand all of this, would like to try part now for fun and understand later
+def add_median_price(key=None, suffix="", trn_df=None, tst_df=None):
+    # Set features to be used
+    median_features = key.copy()
+    median_features.append('price')
+    # Concat train and test to find median prices over whole dataset
+    median_prices = pd.concat([trn_df[median_features], tst_df[median_features]], axis=0)
+    # Group data by key to compute median prices
+    medians_by_key = median_prices.groupby(by=key)['price'].median().reset_index()
+    # Rename median column with provided suffix
+    medians_by_key.rename(columns={'price': 'median_price_' + suffix}, inplace=True)
+    # Update data frames, note that merge seems to reset the index
+    # that's why I reset first and set again the index
+    trn_df = trn_df.reset_index().merge(medians_by_key, on=key, how='left').set_index('listing_id')
+    tst_df = tst_df.reset_index().merge(medians_by_key, on=key, how='left').set_index('listing_id')
+    trn_df['ratio_' + suffix] = trn_df['price'] /trn_df['median_price_' + suffix]
+    tst_df['ratio_' + suffix] = tst_df['price'] / tst_df['median_price_' + suffix]
+
+    return trn_df, tst_df
+    
+add_median_price(suffix="", trn_df=index1_train, tst_df=index1_test)

@@ -4,16 +4,53 @@
 Created on Fri Mar 10 07:59:32 2017
 
 @author: brendontucker
+
+taken and modified from:
+    Simple Exploration Notebook by SRK
+
 """
 
 import numpy as np # linear algebra
 import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
 import matplotlib.pyplot as plt
 
-df = pd.read_json("/Users/brendontucker/Kaggle/RentHop/data/train.json")
+import seaborn as sns
+color = sns.color_palette()
 
-ulimit = np.percentile(df.price.values, 99)
+pd.options.mode.chained_assignment = None  # default='warn'
 
-prices = df['price']
+train_df = pd.read_json("/Users/brendontucker/Kaggle/Data/rentHop_train.json")
 
-cnt_srs = df['bathrooms'].value_counts()
+'''Total Intrest Level counts'''
+
+intrestLevelCounts = train_df['interest_level'].value_counts()
+
+plt.figure(figsize=(8,4))
+sns.barplot(intrestLevelCounts.index, intrestLevelCounts.values, alpha=0.8, color=color[1])
+#renaming variables from tutorial is helpful above--causes me to look to see where the 
+#values are going 
+plt.ylabel('Number of Occurrences', fontsize=12)
+plt.xlabel('Interest level', fontsize=12)
+plt.show()
+
+
+
+'''bathroom counts'''
+
+cnt_srs = train_df['bathrooms'].value_counts()
+
+plt.figure(figsize=(8,4))
+sns.barplot(cnt_srs.index, cnt_srs.values, alpha=0.9, color=color[0])
+plt.ylabel('Number of Occurrences', fontsize=12)
+plt.xlabel('bathrooms', fontsize=12)
+plt.show()
+
+'''bathroom counts, violin, compared to intrest level'''
+
+train_df['bathrooms'].ix[train_df['bathrooms']>3] = 3
+#all counts greater than 3 are lumped to three
+plt.figure(figsize=(8,4))
+sns.violinplot(x='interest_level', y='bathrooms', data=train_df)
+plt.xlabel('Interest level', fontsize=12)
+plt.ylabel('bathrooms', fontsize=12)
+plt.show()
