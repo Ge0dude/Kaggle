@@ -50,4 +50,4 @@ def add_median_price(key=None, suffix="", trn_df=None, tst_df=None):
 
     return trn_df, tst_df
     
-add_median_price(suffix="", trn_df=index1_train, tst_df=index1_test)
+add_median_price(key=None, suffix="", trn_df=index1_train, tst_df=index1_test)
