@@ -13,6 +13,7 @@ by: Den3B
 import numpy as np # linear algebra
 import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
 import matplotlib.pyplot as plt
+import sklearn
 
 import seaborn as sns
 
@@ -23,30 +24,26 @@ test_df = pd.read_json("/Users/brendontucker/Kaggle/Data/rentHop_test.json").set
 index1_train = train_df[(train_df.price < 10000) & (train_df.bedrooms <= 4)]
 index1_test = test_df[(test_df.price < 10000) & (test_df.bedrooms <= 4)]
                       
-man_train_list = index1_train.manager_id.unique()
-man_test_list = index1_test.manager_id.unique()
-print("Train: {0}".format(len(man_train_list)))
-print("Test: {0}".format(len(man_test_list)))
+index1_train["num_photos"] = index1_train["photos"].apply(len)
+index1_train["num_features"] = index1_train["features"].apply(len)
+index1_train["num_description_words"] = index1_train["description"].apply(lambda x: len(x.split(" ")))
+index1_train["created"] = pd.to_datetime(index1_train["created"])
+index1_train["created_year"] = index1_train["created"].dt.year
+index1_train["created_month"] = index1_train["created"].dt.month
+index1_train["created_day"] = index1_train["created"].dt.day
 
-temp1 = index1_train.groupby('manager_id').count().iloc[:,-1]
-temp2 = index1_test.groupby('manager_id').count().iloc[:,-1]
-df_managers = pd.concat([temp1,temp2], axis = 1, join = 'outer')
-df_managers.columns = ['train_count','test_count']
-#print(df_managers.head(20)) #I don't really need this section when I have the variable explorer open
-manager_sort = df_managers.sort_values(by = 'train_count', ascending = False)
-#cumulative counts
-fig, axes = plt.subplots(1,2, figsize = (12,5))
-temp = df_managers['train_count'].dropna().sort_values(ascending = False).reset_index(drop = True)
-axes[0].plot(temp.index+1, temp.cumsum()/temp.sum())
-axes[0].set_title('cumulative train_count')
-
-temp = df_managers['test_count'].dropna().sort_values(ascending = False).reset_index(drop = True)
-axes[1].plot(temp.index+1, temp.cumsum()/temp.sum())
-axes[1].set_title('cumulative test_count')
-
-ix20 = int(len(df_managers['train_count'].dropna())*0.2)
-print("TRAIN: 20% of managers ({0}) responsible for {1:2.2f}% of entries".format(ix20,df_managers['train_count'].sort_values(ascending = False).cumsum().iloc[ix20]/df_managers['train_count'].sum()*100))
-
-ix20 = int(len(df_managers['test_count'].dropna())*0.2)
-print("TEST: 20% of managers ({0}) responsible for {1:2.2f}% of entries".format(ix20, df_managers['test_count'].sort_values(ascending = False).cumsum().iloc[ix20]/df_managers['test_count'].sum()*100))
+features_to_use = ["bathrooms", "bedrooms", "latitude", "longitude", "price",
+                   "num_photos", "num_features", "num_description_words",
+                   "created_year", "created_month", "created_day"]
                       
+from sklearn import preprocessing
+#this is almost a direct copy of what is shown in teh documentation
+lbl = preprocessing.LabelEncoder()
+lbl.fit(list(index1_train['manager_id'].values))
+index1_train['manager_id'] = lbl.transform(list(index1_train['manager_id'].values))
+#basically we have just transformed the managerIds from long alphanumeric codes
+#to much more managable digits
+#max(index1_train['manager_id']) yields 3422, so we have 3423 unique managers 
+#in this subset of the data
+
+
