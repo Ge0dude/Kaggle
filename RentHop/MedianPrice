@@ -20,8 +20,8 @@ test_df = pd.read_json("/Users/brendontucker/Kaggle/Data/rentHop_test.json").set
 
 index1_train = train_df[(train_df.price < 10000) & (train_df.bedrooms <= 4)]
 index1_test = test_df[(test_df.price < 10000) & (test_df.bedrooms <= 4)]
-outliers_train = train_df[(train_df.price > 10000) & (train_df.price < 200000 )] #bedroom requirement prunes too many
-outliers_test = test_df[(test_df.price > 10000)]
+#outliers_train = train_df[(train_df.price > 10000) & (train_df.price < 200000 )] #bedroom requirement prunes too many
+#outliers_test = test_df[(test_df.price > 10000)]
                         
 palette = {"high": "r", "low":"g", "medium":"orange"} #color dict
 
@@ -31,9 +31,9 @@ for interest in ['low', 'medium', 'high']:
                 c = palette[interest])
 sns.boxplot(x="bedrooms", y="price", hue="interest_level", data=index1_train, palette=palette)
 #not enough data for this
-sns.boxplot(x="bedrooms", y="price", hue="interest_level", data=outliers_train, palette=palette)
+#sns.boxplot(x="bedrooms", y="price", hue="interest_level", data=outliers_train, palette=palette)
 
-for interest in ['low', 'medium', 'high']:
+#for interest in ['low', 'medium', 'high']:
     plt.scatter(outliers_train[outliers_train.interest_level==interest].bedrooms, 
                 outliers_train[outliers_train.interest_level==interest].price, 
                 c = palette[interest])
@@ -41,6 +41,26 @@ for interest in ['low', 'medium', 'high']:
 
 #totally don't understand all of this, would like to try part now for fun and understand later
 def add_median_price(key=None, suffix="", trn_df=None, tst_df=None):
+    """
+    Compute median prices for renthop dataset.
+    The function adds 2 columns to the pandas DataFrames : the median prices and a ratio
+    between nthe actual price of the rent and the median
+    
+    :param key: list of columns on which to groupby and compute median prices
+    :param suffix: string used to suffix the newly created columns/features
+    :param trn_df: training dataset as a pandas DataFrame
+    :param tst_df: test dataset as a pandas DataFrame
+    :return: updated train and test DataFrames
+
+    :Example
+    
+    train, test = add_median_price(key=['bedrooms', 'bathrooms'], 
+                                   suffix='rooms', 
+                                   trn_df=train, 
+                                   tst_df=test)
+
+    """
+    
     # Set features to be used
     median_features = key.copy()
     median_features.append('price')
@@ -54,9 +74,10 @@ def add_median_price(key=None, suffix="", trn_df=None, tst_df=None):
     # that's why I reset first and set again the index
     trn_df = trn_df.reset_index().merge(medians_by_key, on=key, how='left').set_index('listing_id')
     tst_df = tst_df.reset_index().merge(medians_by_key, on=key, how='left').set_index('listing_id')
-    trn_df['ratio_' + suffix] = trn_df['price'] /trn_df['median_price_' + suffix]
-    tst_df['ratio_' + suffix] = tst_df['price'] / tst_df['median_price_' + suffix]
-
+    trn_df['price_to_median_ratio_' + suffix] = trn_df['price'] /trn_df['median_price_' + suffix]
+    tst_df['price_to_median_ratio_' + suffix] = tst_df['price'] / tst_df['median_price_' + suffix]
+    
     return trn_df, tst_df
     
-add_median_price(key=None, suffix="", trn_df=index1_train, tst_df=index1_test)
+index1_train, index1_test = add_median_price(key=['bedrooms', 'bathrooms'], 
+                       suffix="rooms", trn_df=index1_train, tst_df=index1_test)
