@@ -10,20 +10,20 @@ Do Managers Matter
 by: Den3B
 """
 
-import numpy as np # linear algebra
-import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
+import numpy as np  # linear algebra
+import pandas as pd  # data processing, CSV file I/O (e.g. pd.read_csv)
 import matplotlib.pyplot as plt
 import sklearn
-
+from sklearn import preprocessing
 import seaborn as sns
 
 train_df = pd.read_json("/Users/brendontucker/Kaggle/Data/rentHop_train.json").set_index('listing_id')
 test_df = pd.read_json("/Users/brendontucker/Kaggle/Data/rentHop_test.json").set_index('listing_id')
 
-#going to try his script, but on the altered data from MedianPrice
+# going to try his script, but on the altered data from MedianPrice
 index1_train = train_df[(train_df.price < 10000) & (train_df.bedrooms <= 4)]
 index1_test = test_df[(test_df.price < 10000) & (test_df.bedrooms <= 4)]
-                      
+
 index1_train["num_photos"] = index1_train["photos"].apply(len)
 index1_train["num_features"] = index1_train["features"].apply(len)
 index1_train["num_description_words"] = index1_train["description"].apply(lambda x: len(x.split(" ")))
@@ -35,15 +35,21 @@ index1_train["created_day"] = index1_train["created"].dt.day
 features_to_use = ["bathrooms", "bedrooms", "latitude", "longitude", "price",
                    "num_photos", "num_features", "num_description_words",
                    "created_year", "created_month", "created_day"]
-                      
-from sklearn import preprocessing
-#this is almost a direct copy of what is shown in teh documentation
+
+
+# this is almost a direct copy of what is shown in teh documentation
 lbl = preprocessing.LabelEncoder()
 lbl.fit(list(index1_train['manager_id'].values))
 index1_train['manager_id'] = lbl.transform(list(index1_train['manager_id'].values))
-#basically we have just transformed the managerIds from long alphanumeric codes
-#to much more managable digits
-#max(index1_train['manager_id']) yields 3422, so we have 3423 unique managers 
-#in this subset of the data
+# basically we have just transformed the managerIds from long alphanumeric codes
+# to much more managable digits
+# max(index1_train['manager_id']) yields 3422, so we have 3423 unique managers
+# in this subset of the data (a small amount has been excluded since we've
+# indexed at the very start )
 
+features_to_use.append('manager_id')
 
+X = index1_train[features_to_use]
+y = index1_train["interest_level"]
+#yeah this function isn't defined? Is he pulling this from the previous kernel?
+X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.33)
