@@ -1,0 +1,37 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Mar 17 09:57:43 2017
+
+@author: brendontucker
+"""
+
+import numpy as np # linear algebra
+import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
+import matplotlib.pyplot as plt
+
+import seaborn as sns
+
+train_df = pd.read_json("/Users/brendontucker/Kaggle/Data/rentHop_train.json").set_index('listing_id')
+test_df = pd.read_json("/Users/brendontucker/Kaggle/Data/rentHop_test.json").set_index('listing_id')
+
+index1_train = train_df[(train_df.price < 10000) & (train_df.bedrooms <= 4)]
+index1_test = test_df[(test_df.price < 10000) & (test_df.bedrooms <= 4)]
+#outliers_train = train_df[(train_df.price > 10000) & (train_df.price < 200000 )] #bedroom requirement prunes too many
+#outliers_test = test_df[(test_df.price > 10000)]
+                        
+palette = {"high": "r", "low":"g", "medium":"orange"} #color dict
+
+for interest in ['low', 'medium', 'high']:
+    plt.scatter(index1_train[index1_train.interest_level==interest].bedrooms, 
+                index1_train[index1_train.interest_level==interest].price, 
+                c = palette[interest])
+sns.boxplot(x="bedrooms", y="price", hue="interest_level", data=index1_train, palette=palette)
+#not enough data for this
+#sns.boxplot(x="bedrooms", y="price", hue="interest_level", data=outliers_train, palette=palette)
+'''
+for interest in ['low', 'medium', 'high']:
+    plt.scatter(outliers_train[outliers_train.interest_level==interest].bedrooms, 
+                outliers_train[outliers_train.interest_level==interest].price, 
+                c = palette[interest])
+'''
