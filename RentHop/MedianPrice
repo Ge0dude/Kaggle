@@ -66,3 +66,10 @@ def add_median_price(key=None, suffix="", trn_df=None, tst_df=None):
     
 index1_train, index1_test = add_median_price(key=['bedrooms', 'bathrooms'], 
                        suffix="rooms", trn_df=index1_train, tst_df=index1_test)
+
+#boxplot for new values compared to intrest level
+palette = {"high": "r", "low":"g", "medium":"orange"}
+sns.boxplot(x="interest_level", y="price_to_median_ratio_rooms",  
+            data=index1_train, palette=palette)
+
+sns.boxplot(x="interest_level", y="median_price_rooms", data=index1_train)
