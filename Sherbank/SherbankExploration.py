@@ -16,4 +16,15 @@ import seaborn as sns
 color = sns.color_palette()
 
 train_df = pd.read_csv('/Users/brendontucker/KaggleData/SherbankData/SherbankTrain.csv')
- 
+
+plt.scatter(range(train_df.shape[0]), np.sort(train_df.price_doc.values)) 
+
+'''need to understand how scatter is working better'''
+#x = 4
+#y = [10, 11, 12, 13]
+#plt.scatter(range(x), y)
+#okay, much clearer now 
+sns.distplot(train_df.price_doc.values, kde=True)
+sns.distplot(np.log(train_df.price_doc.values), kde=True, bins=50)
+
+#sns.distplot(np.log(train_df.full_sq.values), kde=True)
