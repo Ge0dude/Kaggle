@@ -28,3 +28,9 @@ sns.distplot(train_df.price_doc.values, kde=True)
 sns.distplot(np.log(train_df.price_doc.values), kde=True, bins=50)
 
 #sns.distplot(np.log(train_df.full_sq.values), kde=True)
+
+train_df['yearmonth'] = train_df['timestamp'].apply(lambda x: x[:4]+x[5:7])
+
+#need to understand this better
+Ltest = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+Ltest.apply(lambda x: x[:4]+x[5:7])
