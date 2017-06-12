@@ -4,6 +4,9 @@
 Created on Mon Jun 12 08:42:50 2017
 
 @author: brendontucker
+
+taken from https://www.kaggle.com/joparga3/in-depth-skewed\
+-data-classif-93-recall-acc-now
 """
 
 import numpy as np # linear algebra
@@ -15,4 +18,10 @@ from sklearn.preprocessing import StandardScaler
 import xgboost as xgb
 color = sns.color_palette()
 
-train_df = pd.read_csv('/Users/brendontucker/KaggleData/SherbankData/SherbankTrain.csv')
+data = pd.read_csv('/Users/brendontucker/KaggleData/CreditCardFraud/creditcard.csv')
+
+count_classes = pd.value_counts(data['Class'], sort = True).sort_index()
+count_classes.plot(kind = 'bar')
+
+data['normAmount'] = StandardScaler().fit_transform(data['Amount'].reshape(-1, 1))
+data = data.drop(['Time','Amount'],axis=1)
