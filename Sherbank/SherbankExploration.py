@@ -17,6 +17,13 @@ color = sns.color_palette()
 
 train_df = pd.read_csv('/Users/brendontucker/KaggleData/SherbankData/SherbankTrain.csv')
 
+#first, check for multicollinearity with a heatmap 
+
+heatmap1 = train_df.corr()
+#going to have to limit this to maybe 
+sns.heatmap(heatmap1, vmax=.8, square=True)
+
+
 #plt.scatter(range(train_df.shape[0]), np.sort(train_df.price_doc.values)) 
 
 '''need to understand how scatter is working better'''
@@ -99,7 +106,8 @@ testCol = train_df['life_sq']
 
 sns.distplot(testCol, kde=True) #this shows something like 16% have a value of 
 #0. So I think it would be good to seperate that data into two groups, 0 and 
-#then the rest
+#then the rest. Guess I need to check and see if the test data has similar 
+#properties 
 
 
 
