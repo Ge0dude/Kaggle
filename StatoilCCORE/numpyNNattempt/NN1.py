@@ -20,7 +20,7 @@ test = orginal_train[~msk]
 
 #%% LOAD TEST FILE 
 #resutl of this is what I submit
-test = pd.read_json("/Users/brendontucker/KaggleData/StatoilCCORE/data/processed/test.json")
+submitTest = pd.read_json("/Users/brendontucker/KaggleData/StatoilCCORE/data/processed/test.json")
 # wow, a 1.5 gb file loaded.... 
 
 #%% WHAT IS THIS DATA?
@@ -420,7 +420,7 @@ d = model(train_set_x, train_set_y, test_set_x, test_set_y,
           num_iterations = 2000, learning_rate = 0.005, print_cost = True)
 '''
 d = model(XtargetTrain, YtargetTrain, XtargetTest, YtargetTest, 
-          num_iterations = 100000, learning_rate = 0.0001, print_cost = True)
+          num_iterations = 4000, learning_rate = 0.0003, print_cost = True)
 
 
 #%% playing with hyperparameters before moving on to a more complex model
@@ -460,9 +460,54 @@ Cost after iteration 99900: 0.458904
 train accuracy: 82.21191028615623 %
 test accuracy: 65.27331189710611 %
 
+d = model(XtargetTrain, YtargetTrain, XtargetTest, YtargetTest, 
+          num_iterations = 4000, learning_rate = 0.0003, print_cost = True)
+
+Cost after iteration 3900: 0.598017
+train accuracy: 71.77107501933489 %
+test accuracy: 58.842443729903536 %
+
 '''
+
+#%% MORE SOPHISTICATED EXPERIMENTATION
+learning_rates = [0.0001, 0.00009, 0.00005, 0.00001]
+models = {}
+for i in learning_rates:
+    print ("learning rate is: " + str(i))
+    models[str(i)] = model(XtargetTrain, YtargetTrain, XtargetTest, YtargetTest, 
+          num_iterations = 1000, learning_rate = i, print_cost = False)
+    print ('\n' + "-------------------------------------------------------" + '\n')
+
+for i in learning_rates:
+    plt.plot(np.squeeze(models[str(i)]["costs"]), label= str(models[str(i)]["learning_rate"]))
+
+plt.ylabel('cost')
+plt.xlabel('iterations')
+
+legend = plt.legend(loc='upper center', shadow=True)
+frame = legend.get_frame()
+frame.set_facecolor('0.90')
+plt.show()
 
 #%% appears that our train accuracy is improving faster than the test accuracy
 #would like to get > 90% train accuracy before making any judgements  
 
+costs = np.squeeze(d['costs'])
+plt.plot(costs)
+plt.ylabel('cost')
+plt.xlabel('iterations (per hundreds)')
+plt.title("Learning rate =" + str(d["learning_rate"]))
+plt.show()
 
+
+
+
+#%% TEST ON TRUE TEST 
+XsubmitTest = np.zeros(shape=(len(submitTest),5625))
+for x in range(len(submitTest)):
+    XsubmitTest[x] = test.iloc[x][0]
+XsubmitTest = XsubmitTest.T
+
+
+#%%
+my_predicted_image = predict(d["w"], d["b"], my_image)
