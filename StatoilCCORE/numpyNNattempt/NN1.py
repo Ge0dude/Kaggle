@@ -470,7 +470,7 @@ test accuracy: 58.842443729903536 %
 '''
 
 #%% MORE SOPHISTICATED EXPERIMENTATION
-learning_rates = [0.0001, 0.00009, 0.00005, 0.00001]
+learning_rates = [0.00027, 0.0002705, 0.0002708, 0.000271]
 models = {}
 for i in learning_rates:
     print ("learning rate is: " + str(i))
@@ -482,13 +482,42 @@ for i in learning_rates:
     plt.plot(np.squeeze(models[str(i)]["costs"]), label= str(models[str(i)]["learning_rate"]))
 
 plt.ylabel('cost')
-plt.xlabel('iterations')
+plt.xlabel('iterations*100')
 
 legend = plt.legend(loc='upper center', shadow=True)
 frame = legend.get_frame()
 frame.set_facecolor('0.90')
 plt.show()
 
+
+#%% 
+
+#odd, training accuracy goes down 2 points, test goe
+'''
+
+learning rate is: 0.0001
+train accuracy: 69.60556844547564 %
+test accuracy: 58.842443729903536 %
+
+-------------------------------------------------------
+
+learning rate is: 9e-05
+train accuracy: 68.8321732405259 %
+test accuracy: 60.12861736334405 %
+
+-------------------------------------------------------
+
+learning rate is: 5e-05
+train accuracy: 61.25290023201856 %
+test accuracy: 58.842443729903536 %
+
+-------------------------------------------------------
+
+learning rate is: 1e-05
+train accuracy: 52.51353441608662 %
+test accuracy: 55.30546623794213 %
+
+'''
 #%% appears that our train accuracy is improving faster than the test accuracy
 #would like to get > 90% train accuracy before making any judgements  
 
