@@ -420,7 +420,19 @@ d = model(train_set_x, train_set_y, test_set_x, test_set_y,
           num_iterations = 2000, learning_rate = 0.005, print_cost = True)
 '''
 d = model(XtargetTrain, YtargetTrain, XtargetTest, YtargetTest, 
-          num_iterations = 4000, learning_rate = 0.0003, print_cost = True)
+          num_iterations = 200000, learning_rate = 0.000271, print_cost = True)
+
+
+#%% appears that our train accuracy is improving faster than the test accuracy
+#would like to get > 90% train accuracy before making any judgements  
+
+costs = np.squeeze(d['costs'])
+plt.plot(costs)
+plt.ylabel('cost')
+plt.xlabel('iterations (per hundreds)')
+plt.title("Learning rate =" + str(d["learning_rate"]))
+plt.show()
+
 
 
 #%% playing with hyperparameters before moving on to a more complex model
@@ -467,32 +479,40 @@ Cost after iteration 3900: 0.598017
 train accuracy: 71.77107501933489 %
 test accuracy: 58.842443729903536 %
 
+d = model(XtargetTrain, YtargetTrain, XtargetTest, YtargetTest, 
+          num_iterations = 5000, learning_rate = 0.000271, print_cost = True)
+
+Cost after iteration 4900: 0.592358
+train accuracy: 72.46713070378964 %
+test accuracy: 59.80707395498393 %
+
+d = model(XtargetTrain, YtargetTrain, XtargetTest, YtargetTest, 
+          num_iterations = 50000, learning_rate = 0.000271, print_cost = True)
+
+Cost after iteration 49900: 0.431941
+train accuracy: 83.9907192575406 %
+test accuracy: 65.59485530546624 %
+
+d = model(XtargetTrain, YtargetTrain, XtargetTest, YtargetTest, 
+          num_iterations = 100000, learning_rate = 0.000271, print_cost = True)
+
+Cost after iteration 99900: 0.359411
+train accuracy: 88.24439288476411 %
+test accuracy: 67.20257234726688 %
+
+d = model(XtargetTrain, YtargetTrain, XtargetTest, YtargetTest, 
+          num_iterations = 200000, learning_rate = 0.000271, print_cost = True)
+
+Cost after iteration 199900: 0.274242
+train accuracy: 93.1167826759474 %
+test accuracy: 67.20257234726688 %
 '''
 
-#%% MORE SOPHISTICATED EXPERIMENTATION
-learning_rates = [0.00027, 0.0002705, 0.0002708, 0.000271]
-models = {}
-for i in learning_rates:
-    print ("learning rate is: " + str(i))
-    models[str(i)] = model(XtargetTrain, YtargetTrain, XtargetTest, YtargetTest, 
-          num_iterations = 1000, learning_rate = i, print_cost = False)
-    print ('\n' + "-------------------------------------------------------" + '\n')
-
-for i in learning_rates:
-    plt.plot(np.squeeze(models[str(i)]["costs"]), label= str(models[str(i)]["learning_rate"]))
-
-plt.ylabel('cost')
-plt.xlabel('iterations*100')
-
-legend = plt.legend(loc='upper center', shadow=True)
-frame = legend.get_frame()
-frame.set_facecolor('0.90')
-plt.show()
 
 
 #%% 
 
-#odd, training accuracy goes down 2 points, test goe
+#odd, training accuracy goes down 2 points, test goes down 2
 '''
 
 learning rate is: 0.0001
@@ -518,17 +538,32 @@ train accuracy: 52.51353441608662 %
 test accuracy: 55.30546623794213 %
 
 '''
-#%% appears that our train accuracy is improving faster than the test accuracy
-#would like to get > 90% train accuracy before making any judgements  
 
-costs = np.squeeze(d['costs'])
-plt.plot(costs)
+
+
+#%% MORE SOPHISTICATED EXPERIMENTATION
+learning_rates = [0.00027, 0.0002705, 0.0002708, 0.000271]
+models = {}
+for i in learning_rates:
+    print ("learning rate is: " + str(i))
+    models[str(i)] = model(XtargetTrain, YtargetTrain, XtargetTest, YtargetTest, 
+          num_iterations = 1000, learning_rate = i, print_cost = False)
+    print ('\n' + "-------------------------------------------------------" + '\n')
+
+for i in learning_rates:
+    plt.plot(np.squeeze(models[str(i)]["costs"]), label= str(models[str(i)]["learning_rate"]))
+
 plt.ylabel('cost')
-plt.xlabel('iterations (per hundreds)')
-plt.title("Learning rate =" + str(d["learning_rate"]))
+plt.xlabel('iterations*100')
+
+legend = plt.legend(loc='upper center', shadow=True)
+frame = legend.get_frame()
+frame.set_facecolor('0.90')
 plt.show()
 
 
+
+#%%
 
 
 #%% TEST ON TRUE TEST 
@@ -539,4 +574,9 @@ XsubmitTest = XsubmitTest.T
 
 
 #%%
+'''
+to export the model I just need the weights, right? Thats all the model
+IS, just some weights to a function?
+'''
+
 my_predicted_image = predict(d["w"], d["b"], my_image)
