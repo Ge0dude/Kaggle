@@ -632,7 +632,7 @@ def L_layer_model(X, Y, layers_dims, learning_rate = 0.75, num_iterations = 3000
     parameters -- parameters learnt by the model. They can then be used to predict.
     """
 
-    np.random.seed(1)
+    #np.random.seed(1) maybe this put me too close to the true minimized cost?
     costs = []                         # keep track of cost
     
     # Parameters initialization.
@@ -668,7 +668,7 @@ def L_layer_model(X, Y, layers_dims, learning_rate = 0.75, num_iterations = 3000
             print ("Cost after iteration %i: %f" %(i, cost))
         if print_cost and i % 100 == 0:
             costs.append(cost)
-            
+          
     # plot the cost
     plt.plot(np.squeeze(costs))
     plt.ylabel('cost')
@@ -676,7 +676,8 @@ def L_layer_model(X, Y, layers_dims, learning_rate = 0.75, num_iterations = 3000
     plt.title("Learning rate =" + str(learning_rate))
     plt.show()
     
-    return parameters
+    
+    return parameters #trying to print costs also
 
 
 
@@ -702,7 +703,31 @@ parameters = two_layer_model(XtargetTrain, YtargetTrain,
 layers_dims = [5625, 20, 7, 5, 1]
 
 parameters = L_layer_model(XtargetTrain, YtargetTrain, layers_dims, 
-                           num_iterations = 2500, print_cost = True)
+                           learning_rate = 0.008, num_iterations = 1500, 
+                           print_cost = True)
+
+#%% MORE SOPHISTICATED EXPERIMENTATION
+layers_dims = [5625, 20, 7, 5, 1]
+learning_rates = [0.09, 0.1, 0.105]
+parameters = {}
+for i in learning_rates:
+    print ("learning rate is: " + str(i))
+    parameters[str(i)] = L_layer_model(XtargetTrain, YtargetTrain, layers_dims, 
+                           learning_rate = i, num_iterations = 2000, 
+                           print_cost = True)
+    print ('\n' + "-------------------------------------------------------" + '\n')
+
+for i in learning_rates:
+    plt.plot(np.squeeze(parameters[str(i)]["costs"]), 
+             label= str(parameters[str(i)]["learning_rate"]))
+
+plt.ylabel('cost')
+plt.xlabel('iterations*100')
+
+legend = plt.legend(loc='upper center', shadow=True)
+frame = legend.get_frame()
+frame.set_facecolor('0.90')
+plt.show()
 
 
 
