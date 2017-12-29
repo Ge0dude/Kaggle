@@ -526,7 +526,7 @@ def predict(X, y, parameters):
 
 #%% TWO LAYER MODEL
     
-def two_layer_model(X, Y, layers_dims, learning_rate = 0.0032, num_iterations = 3000, print_cost=False):
+def two_layer_model(X, Y, layers_dims, learning_rate = 0.00285, num_iterations = 3000, print_cost=False):
     """
     Implements a two-layer neural network: LINEAR->RELU->LINEAR->SIGMOID.
     
@@ -616,6 +616,70 @@ def two_layer_model(X, Y, layers_dims, learning_rate = 0.0032, num_iterations = 
     
     return parameters
 
+def L_layer_model(X, Y, layers_dims, learning_rate = 0.75, num_iterations = 3000, print_cost=False):#lr was 0.009
+    """
+    Implements a L-layer neural network: [LINEAR->RELU]*(L-1)->LINEAR->SIGMOID.
+    
+    Arguments:
+    X -- data, numpy array of shape (number of examples, num_px * num_px * 3)
+    Y -- true "label" vector (containing 0 if cat, 1 if non-cat), of shape (1, number of examples)
+    layers_dims -- list containing the input size and each layer size, of length (number of layers + 1).
+    learning_rate -- learning rate of the gradient descent update rule
+    num_iterations -- number of iterations of the optimization loop
+    print_cost -- if True, it prints the cost every 100 steps
+    
+    Returns:
+    parameters -- parameters learnt by the model. They can then be used to predict.
+    """
+
+    np.random.seed(1)
+    costs = []                         # keep track of cost
+    
+    # Parameters initialization.
+    ### START CODE HERE ###
+    parameters = initialize_parameters_deep(layers_dims)
+    ### END CODE HERE ###
+    
+    # Loop (gradient descent)
+    for i in range(0, num_iterations):
+
+        # Forward propagation: [LINEAR -> RELU]*(L-1) -> LINEAR -> SIGMOID.
+        ### START CODE HERE ### (≈ 1 line of code)
+        AL, caches = L_model_forward(X, parameters)
+        ### END CODE HERE ###
+        
+        # Compute cost.
+        ### START CODE HERE ### (≈ 1 line of code)
+        cost = compute_cost(AL, Y)
+        ### END CODE HERE ###
+    
+        # Backward propagation.
+        ### START CODE HERE ### (≈ 1 line of code)
+        grads = L_model_backward(AL, Y, caches)
+        ### END CODE HERE ###
+ 
+        # Update parameters.
+        ### START CODE HERE ### (≈ 1 line of code)
+        parameters = update_parameters(parameters, grads, learning_rate)
+        ### END CODE HERE ###
+                
+        # Print the cost every 100 training example
+        if print_cost and i % 100 == 0:
+            print ("Cost after iteration %i: %f" %(i, cost))
+        if print_cost and i % 100 == 0:
+            costs.append(cost)
+            
+    # plot the cost
+    plt.plot(np.squeeze(costs))
+    plt.ylabel('cost')
+    plt.xlabel('iterations (per tens)')
+    plt.title("Learning rate =" + str(learning_rate))
+    plt.show()
+    
+    return parameters
+
+
+
 
 #%% EXPERIMENT WITH TWO-LAYER MODEL 
     
@@ -629,14 +693,18 @@ layers_dims = (n_x, n_h, n_y)
 
 parameters = two_layer_model(XtargetTrain, YtargetTrain, 
                              layers_dims = (n_x, n_h, n_y), 
-                             num_iterations = 2500, print_cost=True)
+                             num_iterations = 70000, print_cost=True)
 
-#%% 
 
-'''
-already this is much slower to train than the logistic version... to be expected
-really. Might have to invest in some AWS
-'''
+#%% EXPERIMENT WITH L-LAYER MODEL
+
+
+layers_dims = [5625, 20, 7, 5, 1]
+
+parameters = L_layer_model(XtargetTrain, YtargetTrain, layers_dims, 
+                           num_iterations = 2500, print_cost = True)
+
+
 
 #%% ACCURACY CHECK
 
@@ -644,7 +712,67 @@ predictions_train = predict(XtargetTrain, YtargetTrain, parameters)
 predictions_test = predict(XtargetTest, YtargetTest, parameters)
 
 
+#%% TWO LAYER RESULTS
 
+'''
+already this is much slower to train than the logistic version... to be expected
+really. Might have to invest in some AWS
+
+learning_rate = 0.0032
+Cost after iteration 2400: 0.6619690173895769
+Accuracy: 0.540168324407
+Accuracy: 0.52861952862
+
+learning_rate = 0.0032
+Cost after iteration 9900: 0.5860850150608253
+Accuracy: 0.660290742158
+Accuracy: 0.649831649832
+
+learning_rate = 0.00285
+Cost after iteration 19900: 0.5327793694122703
+Accuracy: 0.701606732976
+Accuracy: 0.680134680135
+
+
+***seemed to be bottoming out here***
+learning_rate = 0.00285
+Cost after iteration 73900: 0.3962624025918795
+Cost after iteration 74000: 0.39108152374543803
+Cost after iteration 74100: 0.39716426402861293
+Cost after iteration 74200: 0.3911777282450747
+Cost after iteration 74300: 0.3951600213241698
+Cost after iteration 74400: 0.3927957220570474
+Cost after iteration 74500: 0.3925852758662496
+Cost after iteration 74600: 0.39496495210678306
+Cost after iteration 74700: 0.38988139913361913
+Cost after iteration 74800: 0.396018756898011
+Cost after iteration 74900: 0.38996253306464584
+Cost after iteration 75000: 0.393220004546048
+Cost after iteration 75100: 0.3935293848992032
+Cost after iteration 75200: 0.3874962573304563
+Cost after iteration 75300: 0.39886527186657905
+Cost after iteration 75400: 0.3839711880553407
+
+***took about 30 minutes***
+learning_rate = 0.00285
+Cost after iteration 69900: 0.400799954859462
+Accuracy: 0.798010711553
+Accuracy: 0.686868686869
+
+'''
+
+#%% L-LAYER RESULTS
+
+'''
+
+learning_rate = 0.075
+Cost after iteration 2400: 0.691022
+Accuracy: 0.532517214996
+Accuracy: 0.521885521886
+
+
+learning_rate = 0.75
+'''
 
 
 
