@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Wed Dec 27 07:09:18 2017
+Created on Tue Jan  2 07:59:00 2018
 
 @author: brendontucker
 """
@@ -11,47 +11,50 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-#%% LOAD TRAIN
-orginal_train = pd.read_json("/Users/brendontucker/KaggleData/StatoilCCORE/data-1/processed/train.json")
-
-#%% TEST TRAIN SPLIT
-msk = np.random.rand(len(orginal_train)) < 0.8
-train = orginal_train[msk]
-test = orginal_train[~msk]
-
-#%% X TARGET VARIABLE SET UP
-    
-XtargetTrain = np.zeros(shape=(len(train),5625))
-for x in range(len(train)):
-    XtargetTrain[x] = train.iloc[x][0]
-XtargetTrain = XtargetTrain.T
-
-# Y TARGET VARIABLE SET UP
-
-YtargetTrain = np.zeros(shape=(len(train),1))
-for x in range(len(train)):
-    YtargetTrain[x] = train.iloc[x][4]
-YtargetTrain = YtargetTrain.T
-
-# X TEST VAR SET UP
-XtargetTest = np.zeros(shape=(len(test),5625))
-for x in range(len(test)):
-    XtargetTest[x] = test.iloc[x][0]
-XtargetTest = XtargetTest.T
-
-# Y TEST TARGET VARIABLE SET UP
-
-YtargetTest = np.zeros(shape=(len(test),1))
-for x in range(len(test)):
-    YtargetTest[x] = test.iloc[x][4]
-YtargetTest = YtargetTest.T
-
-
 #%% LOAD TEST FILE 
 #resutl of this is what I submit
 submitTest = pd.read_json("/Users/brendontucker/KaggleData/StatoilCCORE/data/processed/test.json")
 # wow, a 1.5 gb file loaded.... 
 
+
+#%% LOAD TRAIN
+orginal_train = pd.read_json("/Users/brendontucker/KaggleData/StatoilCCORE/data-1/processed/train.json")
+
+#%% TEST TRAIN SPLIT
+msk = np.random.rand(len(orginal_train)) < 0.8 
+train = orginal_train[msk]
+test = orginal_train[~msk]
+
+#%% X TARGET VARIABLE SET UP WITH BOTH RADAR TYPES
+    
+XtargetTrain = np.zeros(shape=(len(train)*2,5625))
+for x in range(len(train)):
+    XtargetTrain[x] = train.iloc[x][0]
+    XtargetTrain[x+len(train)] = train.iloc[x][1]
+XtargetTrain = XtargetTrain.T
+
+# Y TARGET VARIABLE SET UP 
+
+YtargetTrain = np.zeros(shape=(len(train)*2,1))
+for x in range(len(train)):
+    YtargetTrain[x] = train.iloc[x][4]
+    YtargetTrain[x+len(train)] = train.iloc[x][4]
+YtargetTrain = YtargetTrain.T
+
+# X TEST VAR SET UP WITH BOTH RADAR TYPES
+XtargetTest = np.zeros(shape=(len(test)*2,5625))
+for x in range(len(test)):
+    XtargetTest[x] = test.iloc[x][0]
+    XtargetTest[x+len(test)] = test.iloc[x][1]
+XtargetTest = XtargetTest.T
+
+# Y TEST TARGET VARIABLE SET UP
+
+YtargetTest = np.zeros(shape=(len(test)*2,1))
+for x in range(len(test)):
+    YtargetTest[x] = test.iloc[x][4]
+    YtargetTest[x+len(test)] = test.iloc[x][4]
+YtargetTest = YtargetTest.T
 
 #%% PREPROCESSING (eventually this will have to be its own file)
 
@@ -73,7 +76,6 @@ mean1 = XtargetTest.mean(axis=0)
 std1 = XtargetTest.std(axis=0)
 XtargetTest = XtargetTest/mean1
 XtargetTest = XtargetTest - std1
-
 
 #%% HELPER FUNCTIONS FOR DEEP LEARNING 
 
@@ -679,12 +681,9 @@ def L_layer_model(X, Y, layers_dims, learning_rate = 0.75, num_iterations = 3000
     
     return parameters #trying to print costs also
 
-
-
-
 #%% EXPERIMENT WITH TWO-LAYER MODEL 
     
-n_x = 5625     # should be pixel count in HV image?
+n_x = 5625     # should be pixel count in HV image? + other radar dimension? 
 n_h = 17        #what happens if we increase this? was 7
 n_y = 1
 layers_dims = (n_x, n_h, n_y)
@@ -693,43 +692,9 @@ layers_dims = (n_x, n_h, n_y)
 # is: XtargetTrain, YtargetTrain,
 
 parameters = two_layer_model(XtargetTrain, YtargetTrain, 
-                             layers_dims = (n_x, n_h, n_y), 
-                             num_iterations = 75000, print_cost=True)
-
-
-#%% EXPERIMENT WITH L-LAYER MODEL
-
-
-layers_dims = [5625, 20, 7, 5, 1]
-
-parameters = L_layer_model(XtargetTrain, YtargetTrain, layers_dims, 
-                           learning_rate = 0.008, num_iterations = 1500, 
-                           print_cost = True)
-
-#%% MORE SOPHISTICATED EXPERIMENTATION
-layers_dims = [5625, 20, 7, 5, 1]
-learning_rates = [0.09, 0.1, 0.105]
-parameters = {}
-for i in learning_rates:
-    print ("learning rate is: " + str(i))
-    parameters[str(i)] = L_layer_model(XtargetTrain, YtargetTrain, layers_dims, 
-                           learning_rate = i, num_iterations = 2000, 
-                           print_cost = True)
-    print ('\n' + "-------------------------------------------------------" + '\n')
-
-for i in learning_rates:
-    plt.plot(np.squeeze(parameters[str(i)]["costs"]), 
-             label= str(parameters[str(i)]["learning_rate"]))
-
-plt.ylabel('cost')
-plt.xlabel('iterations*100')
-
-legend = plt.legend(loc='upper center', shadow=True)
-frame = legend.get_frame()
-frame.set_facecolor('0.90')
-plt.show()
-
-
+                             layers_dims = (n_x, n_h, n_y),
+                             learning_rate = 0.00285,
+                             num_iterations = 25000, print_cost=True)
 
 #%% ACCURACY CHECK
 
@@ -737,80 +702,19 @@ predictions_train = predict(XtargetTrain, YtargetTrain, parameters)
 predictions_test = predict(XtargetTest, YtargetTest, parameters)
 
 
-#%% TWO LAYER RESULTS
 
+#%% RESULTS LOG 
 '''
-already this is much slower to train than the logistic version... to be expected
-really. Might have to invest in some AWS
-
-learning_rate = 0.0032
-Cost after iteration 2400: 0.6619690173895769
-Accuracy: 0.540168324407
-Accuracy: 0.52861952862
-
-learning_rate = 0.0032
-Cost after iteration 9900: 0.5860850150608253
-Accuracy: 0.660290742158
-Accuracy: 0.649831649832
-
-learning_rate = 0.00285
-Cost after iteration 19900: 0.5327793694122703
-Accuracy: 0.701606732976
-Accuracy: 0.680134680135
-
-
-***seemed to be bottoming out here***
-learning_rate = 0.00285
-Cost after iteration 73900: 0.3962624025918795
-Cost after iteration 74000: 0.39108152374543803
-Cost after iteration 74100: 0.39716426402861293
-Cost after iteration 74200: 0.3911777282450747
-Cost after iteration 74300: 0.3951600213241698
-Cost after iteration 74400: 0.3927957220570474
-Cost after iteration 74500: 0.3925852758662496
-Cost after iteration 74600: 0.39496495210678306
-Cost after iteration 74700: 0.38988139913361913
-Cost after iteration 74800: 0.396018756898011
-Cost after iteration 74900: 0.38996253306464584
-Cost after iteration 75000: 0.393220004546048
-Cost after iteration 75100: 0.3935293848992032
-Cost after iteration 75200: 0.3874962573304563
-Cost after iteration 75300: 0.39886527186657905
-Cost after iteration 75400: 0.3839711880553407
-
-***took about 30 minutes***
-learning_rate = 0.00285
-Cost after iteration 69900: 0.400799954859462
-Accuracy: 0.798010711553
-Accuracy: 0.686868686869
-
-
-n_h=17
 parameters = two_layer_model(XtargetTrain, YtargetTrain, 
-                             layers_dims = (n_x, n_h, n_y), 
-                             num_iterations = 50000, print_cost=True)
-Cost after iteration 49900: 0.37985687704326754
-Accuracy: 0.82431372549
-Accuracy: 0.653495440729
+                             layers_dims = (n_x, n_h, n_y),
+                             learning_rate = 0.00285,
+                             num_iterations = 10000, print_cost=True)
+Cost after iteration 9900: 0.6121965393368791
+Accuracy: 0.651813880126
+Accuracy: 0.639880952381
 
 
 '''
-
-#%% L-LAYER RESULTS
-
-'''
-
-learning_rate = 0.075
-Cost after iteration 2400: 0.691022
-Accuracy: 0.532517214996
-Accuracy: 0.521885521886
-
-
-learning_rate = 0.75
-'''
-
-
-
 
 
 
