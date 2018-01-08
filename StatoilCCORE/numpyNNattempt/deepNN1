@@ -11,15 +11,15 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-#%% LOAD TRAIN
+# LOAD TRAIN
 orginal_train = pd.read_json("/Users/brendontucker/KaggleData/StatoilCCORE/data-1/processed/train.json")
 
-#%% TEST TRAIN SPLIT
+# TEST TRAIN SPLIT
 msk = np.random.rand(len(orginal_train)) < 0.8
 train = orginal_train[msk]
 test = orginal_train[~msk]
 
-#%% X TARGET VARIABLE SET UP
+# X TARGET VARIABLE SET UP
     
 XtargetTrain = np.zeros(shape=(len(train),5625))
 for x in range(len(train)):

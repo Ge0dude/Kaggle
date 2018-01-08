@@ -20,12 +20,12 @@ submitTest = pd.read_json("/Users/brendontucker/KaggleData/StatoilCCORE/data/pro
 #%% LOAD TRAIN
 orginal_train = pd.read_json("/Users/brendontucker/KaggleData/StatoilCCORE/data-1/processed/train.json")
 
-#%% TEST TRAIN SPLIT
+# TEST TRAIN SPLIT
 msk = np.random.rand(len(orginal_train)) < 0.8 
 train = orginal_train[msk]
 test = orginal_train[~msk]
 
-#%% X TARGET VARIABLE SET UP WITH BOTH RADAR TYPES
+# X TARGET VARIABLE SET UP WITH BOTH RADAR TYPES
     
 XtargetTrain = np.zeros(shape=(len(train)*2,5625))
 for x in range(len(train)):
@@ -56,7 +56,7 @@ for x in range(len(test)):
     YtargetTest[x+len(test)] = test.iloc[x][4]
 YtargetTest = YtargetTest.T
 
-#%% PREPROCESSING (eventually this will have to be its own file)
+# PREPROCESSING (eventually this will have to be its own file)
 
 # BASIC PREPROCESSING VARS
 
@@ -693,9 +693,32 @@ layers_dims = (n_x, n_h, n_y)
 
 parameters = two_layer_model(XtargetTrain, YtargetTrain, 
                              layers_dims = (n_x, n_h, n_y),
-                             learning_rate = 0.00285,
-                             num_iterations = 25000, print_cost=True)
+                             learning_rate = 0.03,
+                             num_iterations = 50000, print_cost=True)
 
+
+#%% FINDING A BETTER LEARNING RATE for n_h=17
+learning_rates = [0.02, 0.01, 0.002, 0.001, 0.0005]
+parameters = {}
+for i in learning_rates:
+    print ("learning rate is: " + str(i))
+    parameters[str(i)] = two_layer_model(XtargetTrain, YtargetTrain, 
+                             layers_dims = (n_x, n_h, n_y),
+                             learning_rate = i,
+                             num_iterations = 2000, print_cost=True)
+    print ('\n' + "-------------------------------------------------------" + '\n')
+
+for i in learning_rates:
+    plt.plot(np.squeeze(parameters[str(i)]["costs"]), 
+             label= str(parameters[str(i)]["learning_rate"]))
+
+plt.ylabel('cost')
+plt.xlabel('iterations*100')
+
+legend = plt.legend(loc='upper center', shadow=True)
+frame = legend.get_frame()
+frame.set_facecolor('0.90')
+plt.show()
 #%% ACCURACY CHECK
 
 predictions_train = predict(XtargetTrain, YtargetTrain, parameters)
@@ -704,7 +727,11 @@ predictions_test = predict(XtargetTest, YtargetTest, parameters)
 
 
 #%% RESULTS LOG 
+#would eventually like a way to plot accuracy predictions per 100. Maybe make
+#that part of gradient checking
 '''
+
+n_h = 17
 parameters = two_layer_model(XtargetTrain, YtargetTrain, 
                              layers_dims = (n_x, n_h, n_y),
                              learning_rate = 0.00285,
@@ -712,6 +739,229 @@ parameters = two_layer_model(XtargetTrain, YtargetTrain,
 Cost after iteration 9900: 0.6121965393368791
 Accuracy: 0.651813880126
 Accuracy: 0.639880952381
+
+parameters = two_layer_model(XtargetTrain, YtargetTrain, 
+                             layers_dims = (n_x, n_h, n_y),
+                             learning_rate = 0.00285,
+                             num_iterations = 25000, print_cost=True)
+
+Cost after iteration 24900: 0.5559457371623462
+Accuracy: 0.688880126183
+Accuracy: 0.665178571429
+
+
+n_h = 17
+parameters = two_layer_model(XtargetTrain, YtargetTrain, 
+                             layers_dims = (n_x, n_h, n_y),
+                             learning_rate = 0.00285,
+                             num_iterations = 40000, print_cost=True)
+Accuracy: 0.709266409266
+Accuracy: 0.68932038835
+
+n_h = 17
+parameters = two_layer_model(XtargetTrain, YtargetTrain, 
+                             layers_dims = (n_x, n_h, n_y),
+                             learning_rate = 0.00285,
+                             num_iterations = 45000, print_cost=True)
+Cost after iteration 44900: 0.5123028478884648
+Accuracy: 0.716602316602
+Accuracy: 0.694174757282
+
+n_h = 17
+parameters = two_layer_model(XtargetTrain, YtargetTrain, 
+                             layers_dims = (n_x, n_h, n_y),
+                             learning_rate = 0.03,
+                             num_iterations = 50000, print_cost=True)
+Cost after iteration 49900: 0.5280477733712402
+
+
+learning rate is: 0.285
+Cost after iteration 0: 0.6904752463266352
+Cost after iteration 100: 0.6910916423732921
+Cost after iteration 200: 0.6910915055066513
+Cost after iteration 300: 0.6910912781291456
+Cost after iteration 400: 0.691090955934224
+Cost after iteration 500: 0.691091828879263
+Cost after iteration 600: 0.691091824718516
+Cost after iteration 700: 0.6910918197480824
+Cost after iteration 800: 0.6910918136428486
+Cost after iteration 900: 0.691091805942465
+Cost after iteration 1000: 0.691091796353015
+Cost after iteration 1100: 0.6910917842668988
+Cost after iteration 1200: 0.6910917688949045
+Cost after iteration 1300: 0.6910917480676306
+Cost after iteration 1400: 0.6910913361890751
+Cost after iteration 1500: 0.6910906512002061
+Cost after iteration 1600: 0.691091838262931
+Cost after iteration 1700: 0.6910918372329317
+Cost after iteration 1800: 0.6910918372329314
+Cost after iteration 1900: 0.6910918372329314
+
+-------------------------------------------------------
+
+learning rate is: 0.0285
+Cost after iteration 0: 0.6904752463266352
+Cost after iteration 100: 0.6742351804889182
+Cost after iteration 200: 0.6691008315401197
+Cost after iteration 300: 0.6652674570048586
+Cost after iteration 400: 0.6627233028494048
+Cost after iteration 500: 0.6615328561052308
+Cost after iteration 600: 0.6883745957432594
+Cost after iteration 700: 0.6694019882118697
+Cost after iteration 800: 0.6602101328607431
+Cost after iteration 900: 0.6595229118379374
+Cost after iteration 1000: 0.6590205027771038
+Cost after iteration 1100: 0.6586116929473533
+Cost after iteration 1200: 0.6583343092286582
+Cost after iteration 1300: 0.6581138663658466
+Cost after iteration 1400: 0.65799165578704
+Cost after iteration 1500: 0.6576189667085518
+Cost after iteration 1600: 0.6573304609195947
+Cost after iteration 1700: 0.6569945843508901
+Cost after iteration 1800: 0.656613848682086
+Cost after iteration 1900: 0.656193424880438
+
+-------------------------------------------------------
+
+learning rate is: 0.00285
+Cost after iteration 0: 0.6904752463266352
+Cost after iteration 100: 0.6789104589011249
+Cost after iteration 200: 0.678354863792582
+Cost after iteration 300: 0.6778105706072725
+Cost after iteration 400: 0.677273014107972
+Cost after iteration 500: 0.6767469713610497
+Cost after iteration 600: 0.6762292376030767
+Cost after iteration 700: 0.6757187710956342
+Cost after iteration 800: 0.6752146076386644
+Cost after iteration 900: 0.6747155330994471
+Cost after iteration 1000: 0.6742202632621919
+Cost after iteration 1100: 0.6737274799069317
+Cost after iteration 1200: 0.6732357593797926
+Cost after iteration 1300: 0.672743971575757
+Cost after iteration 1400: 0.6722500088926611
+Cost after iteration 1500: 0.6717508626735565
+Cost after iteration 1600: 0.6712437940361453
+Cost after iteration 1700: 0.6707280440277581
+Cost after iteration 1800: 0.6702008105770436
+Cost after iteration 1900: 0.6696585911186352
+
+learning rate is: 0.03
+Cost after iteration 0: 0.6904752463266352
+Cost after iteration 100: 0.6739760571279207
+Cost after iteration 200: 0.6684863635149952
+Cost after iteration 300: 0.6638341665505468
+Cost after iteration 400: 0.6639272442078212
+Cost after iteration 500: 0.6620048126770468
+Cost after iteration 600: 0.6608005592881836
+Cost after iteration 700: 0.6616349008803132
+Cost after iteration 800: 0.6607987677057882
+Cost after iteration 900: 0.6605045535558809
+Cost after iteration 1000: 0.660331408133929
+Cost after iteration 1100: 0.6602698044587846
+Cost after iteration 1200: 0.6602247019261979
+Cost after iteration 1300: 0.660047659435054
+Cost after iteration 1400: 0.6598402946978986
+Cost after iteration 1500: 0.6595586777685706
+Cost after iteration 1600: 0.6591932612088411
+Cost after iteration 1700: 0.658764913829915
+Cost after iteration 1800: 0.6582865919745154
+Cost after iteration 1900: 0.6577686761576642
+
+-------------------------------------------------------
+
+learning rate is: 0.04
+Cost after iteration 0: 0.6904752463266352
+Cost after iteration 100: 0.6722467839359155
+Cost after iteration 200: 0.6672265716429222
+Cost after iteration 300: 0.6664040574605576
+Cost after iteration 400: 0.6660122710245562
+Cost after iteration 500: 0.6661105673142648
+Cost after iteration 600: 0.6660177961033965
+Cost after iteration 700: 0.665669395218434
+Cost after iteration 800: 0.6651615525115657
+Cost after iteration 900: 0.6644913142864938
+Cost after iteration 1000: 0.6638113489145564
+Cost after iteration 1100: 0.6630627672304391
+Cost after iteration 1200: 0.6623232189782766
+Cost after iteration 1300: 0.6615456512220688
+Cost after iteration 1400: 0.660749429541625
+Cost after iteration 1500: 0.6600112876083787
+Cost after iteration 1600: 0.6592085370042204
+Cost after iteration 1700: 0.6584316126047565
+Cost after iteration 1800: 0.6577305598060624
+Cost after iteration 1900: 0.6566523327620639
+
+-------------------------------------------------------
+
+learning rate is: 0.002
+Cost after iteration 0: 0.6904752463266352
+Cost after iteration 100: 0.6790907528633829
+Cost after iteration 200: 0.6786839882171811
+Cost after iteration 300: 0.6782964296589792
+Cost after iteration 400: 0.6779143517907158
+Cost after iteration 500: 0.6775350499136987
+Cost after iteration 600: 0.6771608911087572
+Cost after iteration 700: 0.6767921861081613
+Cost after iteration 800: 0.6764276231218348
+Cost after iteration 900: 0.6760667808292171
+Cost after iteration 1000: 0.6757093950217944
+Cost after iteration 1100: 0.6753550978421162
+Cost after iteration 1200: 0.6750035462100352
+Cost after iteration 1300: 0.6746541051134755
+Cost after iteration 1400: 0.6743066360695669
+Cost after iteration 1500: 0.6739603132769066
+Cost after iteration 1600: 0.6736149691218196
+Cost after iteration 1700: 0.6732699746887183
+Cost after iteration 1800: 0.6729250703967946
+Cost after iteration 1900: 0.6725794365328946
+
+-------------------------------------------------------
+
+learning rate is: 0.001
+Cost after iteration 0: 0.6904752463266352
+Cost after iteration 100: 0.6804954042659552
+Cost after iteration 200: 0.6790906069307653
+Cost after iteration 300: 0.6788792235563258
+Cost after iteration 400: 0.6786831443155711
+Cost after iteration 500: 0.6784887820998639
+Cost after iteration 600: 0.6782956182286465
+Cost after iteration 700: 0.6781041040599862
+Cost after iteration 800: 0.6779135713116089
+Cost after iteration 900: 0.677723847295489
+Cost after iteration 1000: 0.6775342963645022
+Cost after iteration 1100: 0.6773462870377353
+Cost after iteration 1200: 0.6771601745215491
+Cost after iteration 1300: 0.6769752638839822
+Cost after iteration 1400: 0.6767914993701443
+Cost after iteration 1500: 0.6766087722244409
+Cost after iteration 1600: 0.6764269680245293
+Cost after iteration 1700: 0.6762461123568432
+Cost after iteration 1800: 0.6760661563470979
+Cost after iteration 1900: 0.6758870702679387
+
+-------------------------------------------------------
+
+learning rate is: 0.0005
+Cost after iteration 0: 0.6904752463266352
+Cost after iteration 100: 0.6846543864635856
+Cost after iteration 200: 0.6804979097673449
+Cost after iteration 300: 0.6793253269196675
+Cost after iteration 400: 0.6790905460465373
+Cost after iteration 500: 0.6789787719307535
+Cost after iteration 600: 0.678878798731068
+Cost after iteration 700: 0.6787804114297994
+Cost after iteration 800: 0.6786827229114959
+Cost after iteration 900: 0.6785854204719174
+Cost after iteration 1000: 0.6784883692047496
+Cost after iteration 1100: 0.6783915437298315
+Cost after iteration 1200: 0.6782952118843935
+Cost after iteration 1300: 0.6781992841436296
+Cost after iteration 1400: 0.6781037054949026
+Cost after iteration 1500: 0.6780083457021184
+Cost after iteration 1600: 0.6779131783243407
+Cost after iteration 1700: 0.6778182394921353
+Cost after iteration 1800: 0.6777234521307376
+Cost after iteration 1900: 0.6776285339460031
 
 
 '''
