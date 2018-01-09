@@ -1,20 +1,22 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Fri Jan  5 15:10:01 2018
+Created on Tue Jan  9 08:43:29 2018
 
 @author: brendontucker
 
-consider normalizing with
+trying to change this to 
 
-l2_normalize(
-    x,
-    dim,
-    epsilon=1e-12,
-    name=None
-)
+1) produce an output file (csv: id, is_iceberg)
 
-also indidence angles ? 
+
+2) change loss function to tf.nn.log_loss
+    -think I did this, only changed in the compute cost function...should be the only place I need
+    it? 
+
+
+3) have predictions be probability (skip step where probablities are converted
+     to predictions )
 """
 
 #%% IMPORTS
@@ -516,10 +518,14 @@ def compute_cost(Z3, Y):
     
     # to fit the tensorflow requirement for tf.nn.softmax_cross_entropy_with_logits(...,...)
     logits = tf.transpose(Z3)
+    #print('logits are:',logits)
     labels = tf.transpose(Y)
+    #print('lables are:', labels)
     
     ### START CODE HERE ### (1 line of code)
     cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=labels))
+    #cost =  tf.reduce_mean(tf.losses.log_loss(labels=labels, predictions=logits))
+    #print('cost is of type:', type(cost), 'cost is:', cost)
     ### END CODE HERE ###
     
     return cost
@@ -527,10 +533,10 @@ def compute_cost(Z3, Y):
 
 #%% here is the meat of the program... going ot spend lots of time looking at 
     #this I believe 
-    
+# learning_rate = 0.0001    
 
 def model(XtargetTrain, YtargetTrain, XtargetTest, YtargetTest, learning_rate = 0.0001,
-          num_epochs = 300, minibatch_size = 32, print_cost = True):
+          num_epochs = 10, minibatch_size = 32, print_cost = True):
     """
     Implements a three-layer tensorflow neural network: LINEAR->RELU->LINEAR->RELU->LINEAR->SOFTMAX.
     
@@ -572,7 +578,8 @@ def model(XtargetTrain, YtargetTrain, XtargetTest, YtargetTest, learning_rate = 
     
     # Cost function: Add cost function to tensorflow graph
     ### START CODE HERE ### (1 line)
-    cost = compute_cost(Z3, Y) #might have issues with int32 vs int64 but should otherwise be good
+    cost = compute_cost(Z3, Y)
+    #print('cost is:', cost) #issue might be optimizer so this should help figure out where nan is coming from
     ### END CODE HERE ###
     
     # Backpropagation: Define the tensorflow optimizer. Use an AdamOptimizer.
@@ -626,10 +633,27 @@ def model(XtargetTrain, YtargetTrain, XtargetTest, YtargetTest, learning_rate = 
         # lets save the parameters in a variable
         parameters = sess.run(parameters)
         print("Parameters have been trained!")
-
+        
+        #trying to print outputs
+        Xx = tf.placeholder(shape=[XtargetTrain.shape[0],None],dtype=tf.float32,name="Xx")
+        print(Xx)
+        predict = forward_propagation(Xx,parameters)
+        classify = tf.nn.softmax(tf.transpose(predict))
+        
+        
+        #have to reshape X to feed it correctly?
+        #X = tf.reshape(X, [11250])
+        
+        hopefull= pd.DataFrame(data=sess.run(classify, feed_dict={Xx: XtargetTest}))
+        #print(sess.run(classify, feed_dict={Xx: XtargetTest}))
+        print(hopefull[1])
+        #end of trying to print outputs
+        
+        
+        
+        #print(sess.run(x, feed_dict = {Z3 : x}))
         # Calculate the correct predictions
         correct_prediction = tf.equal(tf.argmax(Z3), tf.argmax(Y))
-
         # Calculate accuracy on the test set
         accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
 
@@ -645,147 +669,120 @@ def model(XtargetTrain, YtargetTrain, XtargetTest, YtargetTest, learning_rate = 
 
 # create_placeholders(11250, 2)
 parameters = model (XtargetTrain, YtargetTrain, XtargetTest, YtargetTest)
-#parameters = model(X_train, Y_train, X_test, Y_test)
 
 #%% create submission
 # predict(X, parameters) 
 
+'''
+
+X = tf.placeholder(shape=[X_train.shape[0],None],dtype=tf.float32,name="X")
+
+predict = forward_propagation(X,hyperparameters,parameters)
+
+classify = tf.nn.softmax(tf.transpose(predict))
+session = tf.Session()
+session.run(init)
+
+print(session.run(classify, feed_dict={X: X_test[:,3]}))
+
+'''
+
+#or maybe just do it in the loop itself? 
+
+Xxx = tf.placeholder(shape=[XtargetTrain.shape[0],None],dtype=tf.float32,name="Xxx")
+print(Xxx)
+predictTest = forward_propagation(Xxx,parameters)
+classify = tf.nn.softmax(tf.transpose(predict))
+
+session = tf.Session()
+session.run(init)
+
+hopefull= pd.DataFrame(data=session.run(classify, feed_dict={Xx: XtargetTest}))
+#print(sess.run(classify, feed_dict={Xx: XtargetTest}))
+print(hopefull[1])
+
 #%%
-#first run, not too bad!
 
 '''
-parameters = model (XtargetTrain, YtargetTrain, XtargetTest, YtargetTest)
-#parameters = model(X_train, Y_train, X_test, Y_test)
-Cost after epoch 0: 0.811464
-Cost after epoch 100: 0.725620
-Cost after epoch 200: 0.681771
-Cost after epoch 300: 0.645571
-Cost after epoch 400: 0.611891
-Cost after epoch 500: 0.548936
-Cost after epoch 600: 0.511825
-Cost after epoch 700: 0.433819
-Cost after epoch 800: 0.404315
-Cost after epoch 900: 0.390438
-Cost after epoch 1000: 0.404510
-Cost after epoch 1100: 0.412515
-Cost after epoch 1200: 0.382937
-Cost after epoch 1300: 0.297682
-Cost after epoch 1400: 0.284559
-Parameters have been trained!
-Train Accuracy: 0.919657
-Traceback (most recent call last):
+tyring to get new loss function to work
 
-  File "<ipython-input-66-07ec26d314e1>", line 1, in <module>
-    parameters = model (XtargetTrain, YtargetTrain, XtargetTest, YtargetTest)
+This is the output of the working loss function
 
-  File "<ipython-input-65-40e9df3264d6>", line 106, in model
-    print("Test Accuracy:", accuracy.eval({X: XtargetTest, Y: YtargetTrain}))
+cost is of type: <class 'tensorflow.python.framework.ops.Tensor'> 
+cost is: Tensor("Mean:0", shape=(), dtype=float32)
+
+and new version gets
+
+cost is of type: <class 'tensorflow.python.framework.ops.Tensor'> 
+cost is: Tensor("Mean:0", shape=(), dtype=float32)
+    
+which is the same... but obviously wrong because my cost value is nan... 
+    I think most common problem that results in nan is too high a learning rate?
+    so lets lower it and see
     
     
-    
-wowowowowowowo :)
-    
-Cost after epoch 0: 0.811464
-Cost after epoch 100: 0.725620
-Cost after epoch 200: 0.681771
-Cost after epoch 300: 0.645571
-Cost after epoch 400: 0.611891
-Cost after epoch 500: 0.548936
-Cost after epoch 600: 0.511825
-Cost after epoch 700: 0.433819
-Cost after epoch 800: 0.404315
-Cost after epoch 900: 0.390438
-Cost after epoch 1000: 0.404510
-Cost after epoch 1100: 0.412515
-Cost after epoch 1200: 0.382937
-Cost after epoch 1300: 0.297682
-Cost after epoch 1400: 0.284559
-Cost after epoch 1500: 0.313036
-Cost after epoch 1600: 0.240628
-Cost after epoch 1700: 0.233152
-Cost after epoch 1800: 0.191060
-Cost after epoch 1900: 0.209523
-Parameters have been trained!
-Train Accuracy: 0.978159
-Test Accuracy: 0.754658
+print statement for cost in body of model for working version
+cost is: Tensor("Mean:0", shape=(), dtype=float32)
 
-Cost after epoch 0: 0.811464
-Cost after epoch 100: 0.725620
-Cost after epoch 200: 0.681771
-Cost after epoch 300: 0.645571
-Cost after epoch 400: 0.611891
-Cost after epoch 500: 0.548936
-Cost after epoch 600: 0.511825
-Cost after epoch 700: 0.433819
-Cost after epoch 800: 0.404315
-Cost after epoch 900: 0.390438
-Cost after epoch 1000: 0.404510
-Cost after epoch 1100: 0.412515
-Cost after epoch 1200: 0.382937
-Cost after epoch 1300: 0.297682
-Cost after epoch 1400: 0.284559
-Cost after epoch 1500: 0.313036
-Cost after epoch 1600: 0.240628
-Cost after epoch 1700: 0.233152
-Cost after epoch 1800: 0.191060
-Cost after epoch 1900: 0.209523
-Cost after epoch 2000: 0.171558
-Cost after epoch 2100: 0.134904
-Cost after epoch 2200: 0.124109
-Cost after epoch 2300: 0.103590
-Cost after epoch 2400: 0.260602
-Cost after epoch 2500: 0.076344
-Cost after epoch 2600: 0.064412
-Cost after epoch 2700: 0.059679
-Cost after epoch 2800: 0.049298
-Cost after epoch 2900: 0.044766
-Parameters have been trained!
-Train Accuracy: 0.98986
-Test Accuracy: 0.71118
+and for broken version 
+cost is: Tensor("Mean:0", shape=(), dtype=float32)
 
-wow, guess early stoppage might be a good idea if regularization doesn't work out
-
-parameters = model (XtargetTrain, YtargetTrain, XtargetTest, YtargetTest)
-#parameters = model(X_train, Y_train, X_test, Y_test)
-Cost after epoch 0: 0.811464
-Cost after epoch 100: 0.725620
-Cost after epoch 200: 0.681771
-Cost after epoch 300: 0.645571
-Cost after epoch 400: 0.611891
-Cost after epoch 500: 0.548936
-Cost after epoch 600: 0.511825
-Cost after epoch 700: 0.433819
-Cost after epoch 800: 0.404315
-Cost after epoch 900: 0.390438
-Cost after epoch 1000: 0.404510
-Cost after epoch 1100: 0.412515
-Cost after epoch 1200: 0.382937
-Cost after epoch 1300: 0.297682
-Parameters have been trained!
-Train Accuracy: 0.924337
-Test Accuracy: 0.763975
-
-ran this one without preprocessing, just out of curiosity, wow, 
-trains much faster
-
-Cost after epoch 0: 2.600578
-Cost after epoch 100: 0.378037
-Cost after epoch 200: 0.290580
-Cost after epoch 300: 0.083913
-Cost after epoch 400: 0.118189
-Cost after epoch 500: 0.087333
-Cost after epoch 600: 0.018625
-Cost after epoch 700: 0.009767
-Cost after epoch 800: 0.059056
-Cost after epoch 900: 0.010778
-Cost after epoch 1000: 0.007017
-Cost after epoch 1100: 0.009179
-Cost after epoch 1200: 0.003659
-Cost after epoch 1300: 0.003250
-Parameters have been trained!
-Train Accuracy: 1.0
-Test Accuracy: 0.728614
+so surely the issue must be further down?
 
 
-    
+maybe preprocessing will help? 
+nope 
+
+maybe I need to run for longer?
+
+
+
+
+
+
+printing outputs : https://stackoverflow.com/questions/40430186/tensorflow-valueerror-cannot-feed-value-of-shape-64-64-3-for-tensor-uplace
+
+from example
+ValueError: Cannot feed value of shape (64, 64, 3) for Tensor u'Placeholder:0', 
+which has shape '(?, 64, 64, 3)'
+
+
+Cannot feed value of shape (11250,) for Tensor 'X_1:0',
+
+=>X does not have the right dimensions to fit into
+
+which has shape '(11250, ?)'
+
+
+
+
+[[ 0.57323956  0.42676041]
+ [ 0.55073351  0.44926649]
+ [ 0.55944043  0.4405596 ]
+ [ 0.73255342  0.26744655]
+ [ 0.75022084  0.24977909]
+ [ 0.5478847   0.45211524]
+ [ 0.69621283  0.30378711]
+ [ 0.61005563  0.38994434]
+ [ 0.66413742  0.33586264]
+ [ 0.58855838  0.41144171]
+ [ 0.63553393  0.36446607]
+ [ 0.57203412  0.42796594]
+ [ 0.63672274  0.36327732]
+ [ 0.66789401  0.33210596]
+ [ 0.63979203  0.360208  ]
+ [ 0.62979633  0.37020367]
+ [ 0.57863921  0.42136082]
+ [ 0.63418597  0.36581403]
+ [ 0.56350785  0.4364922 ]
+ [ 0.6790055   0.32099447]
+ 
+ 
+ 
 '''
+
+
+#%% lololol at how badly I undersand tensorflow
+
+ 
+ 
