@@ -22,6 +22,7 @@ trying to change this to
 #%% IMPORTS
 
 import pandas as pd
+import pickle
 import math
 import numpy as np
 import h5py
@@ -82,6 +83,15 @@ def convert_to_one_hot(Y, C):
 submitTest = pd.read_json("/Users/brendontucker/KaggleData/StatoilCCORE/data/processed/test.json")
 # wow, a 1.5 gb file loaded.... 
 
+#%% clean submission data
+
+X_test = np.zeros(shape=(len(submitTest),11250))
+for x in range(len(submitTest)):
+    X_test[x] = submitTest.iloc[x][0] + submitTest.iloc[x][1]
+X_test = X_test.T
+
+
+
 
 #%% LOAD TRAIN
 orginal_train = pd.read_json("/Users/brendontucker/KaggleData/StatoilCCORE/data-1/processed/train.json")
@@ -106,6 +116,7 @@ XtargetTrain = np.zeros(shape=(len(train),11250))
 for x in range(len(train)):
     XtargetTrain[x] = train.iloc[x][0] + train.iloc[x][1]
 XtargetTrain = XtargetTrain.T 
+
 
 
 #%% Y TARGET VARIABLE SET UP 
@@ -536,7 +547,7 @@ def compute_cost(Z3, Y):
 # learning_rate = 0.0001    
 
 def model(XtargetTrain, YtargetTrain, XtargetTest, YtargetTest, learning_rate = 0.0001,
-          num_epochs = 10, minibatch_size = 32, print_cost = True):
+          num_epochs = 400, minibatch_size = 32, print_cost = True):
     """
     Implements a three-layer tensorflow neural network: LINEAR->RELU->LINEAR->RELU->LINEAR->SOFTMAX.
     
@@ -635,18 +646,20 @@ def model(XtargetTrain, YtargetTrain, XtargetTest, YtargetTest, learning_rate = 
         print("Parameters have been trained!")
         
         #trying to print outputs
+        '''
         Xx = tf.placeholder(shape=[XtargetTrain.shape[0],None],dtype=tf.float32,name="Xx")
         print(Xx)
         predict = forward_propagation(Xx,parameters)
         classify = tf.nn.softmax(tf.transpose(predict))
-        
-        
-        #have to reshape X to feed it correctly?
-        #X = tf.reshape(X, [11250])
-        
         hopefull= pd.DataFrame(data=sess.run(classify, feed_dict={Xx: XtargetTest}))
-        #print(sess.run(classify, feed_dict={Xx: XtargetTest}))
-        print(hopefull[1])
+        print(hopefull, hopefull.iloc[0], hopefull.iloc[1])
+        '''
+        Xxx = tf.placeholder(shape=[X_test.shape[0],None],dtype=tf.float32,name="Xxx")
+        #print(Xxx)
+        predictTest = forward_propagation(Xxx,parameters)
+        classify = tf.nn.softmax(tf.transpose(predictTest))
+        hopefull = pd.DataFrame(data=sess.run(classify, feed_dict={Xxx: X_test}))
+        
         #end of trying to print outputs
         
         
@@ -660,7 +673,7 @@ def model(XtargetTrain, YtargetTrain, XtargetTest, YtargetTest, learning_rate = 
         print("Train Accuracy:", accuracy.eval({X: XtargetTrain, Y: YtargetTrain}))
         print("Test Accuracy:", accuracy.eval({X: XtargetTest, Y: YtargetTest}))
         
-        return parameters
+        return parameters, hopefull
 
 
 
@@ -668,7 +681,35 @@ def model(XtargetTrain, YtargetTrain, XtargetTest, YtargetTest, learning_rate = 
 #%% EXECUTE TENSORFLOW NEURAL NETWORK 
 
 # create_placeholders(11250, 2)
-parameters = model (XtargetTrain, YtargetTrain, XtargetTest, YtargetTest)
+parameters, answers = model (XtargetTrain, YtargetTrain, XtargetTest, YtargetTest)
+
+#%% save parameters of model to a file 
+
+#%% 
+#delete column 0... pretty sure column 1 is the prediction of yes... pretty sure
+answers = answers.drop([0], axis=1)
+
+#%%
+#use id a index
+idList = []
+for x in range(len(submitTest)):
+    idList.append(submitTest.iloc[x][2])
+idSeries = pd.Series(idList)
+#%% add id values as index 
+answers = answers.set_index(idSeries)
+        
+
+#%% rename columns
+answers = answers.rename(index=str, columns={1 : "is_iceberg"})
+#not quite right, need to rename index as "id",not column 1
+#%% rename index
+answers.index.name = "id"
+
+#df.index.name = 'foo'
+#%% export as csv
+
+answers.to_csv('/Users/brendontucker/Kaggle/StatoilCCORE/submissions/subOne.csv')
+
 
 #%% create submission
 # predict(X, parameters) 
@@ -687,17 +728,28 @@ print(session.run(classify, feed_dict={X: X_test[:,3]}))
 
 '''
 
+'''
+
+init = tf.global_variables_initializer()         # When init is run later (session.run(init)),
+                                                 # the loss variable will be initialized and ready to be computed
+with tf.Session() as session:                    # Create a session and print the output
+    session.run(init)                            # Initializes the variables
+    print(session.run(loss)) 
+
+'''
+
+
 #or maybe just do it in the loop itself? 
 
-Xxx = tf.placeholder(shape=[XtargetTrain.shape[0],None],dtype=tf.float32,name="Xxx")
+Xxx = tf.placeholder(shape=[X_test.shape[0],None],dtype=tf.float32,name="Xxx")
 print(Xxx)
 predictTest = forward_propagation(Xxx,parameters)
 classify = tf.nn.softmax(tf.transpose(predict))
 
-session = tf.Session()
-session.run(init)
-
-hopefull= pd.DataFrame(data=session.run(classify, feed_dict={Xx: XtargetTest}))
+init = tf.global_variables_initializer()
+with tf.Session() as session:                    # Create a session and print the output
+    session.run(init) 
+    hopefull = pd.DataFrame(data=session.run(classify, feed_dict={Xxx: X_test}))
 #print(sess.run(classify, feed_dict={Xx: XtargetTest}))
 print(hopefull[1])
 
