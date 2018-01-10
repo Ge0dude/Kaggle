@@ -17,6 +17,14 @@ trying to change this to
 
 3) have predictions be probability (skip step where probablities are converted
      to predictions )
+
+
+first submission was on the 400 epoch cycle with no data preprocessing.
+submitted 1 column and got .65 ... thinking maybe 1 is actually the not-an-iceberg prediction
+going to try trainng 2000 epochs on preprocessed data and submit that version and see if 1 column
+is still so bad... 
+
+still not using the "right" cost function either... 
 """
 
 #%% IMPORTS
@@ -90,7 +98,13 @@ for x in range(len(submitTest)):
     X_test[x] = submitTest.iloc[x][0] + submitTest.iloc[x][1]
 X_test = X_test.T
 
+#%% BASIC PREPROCESSING VARS
 
+mean = X_test.mean(axis=0)
+std = X_test.std(axis=0)
+
+X_test = X_test/mean
+X_test = X_test - std
 
 
 #%% LOAD TRAIN
@@ -547,7 +561,7 @@ def compute_cost(Z3, Y):
 # learning_rate = 0.0001    
 
 def model(XtargetTrain, YtargetTrain, XtargetTest, YtargetTest, learning_rate = 0.0001,
-          num_epochs = 400, minibatch_size = 32, print_cost = True):
+          num_epochs = 2000, minibatch_size = 32, print_cost = True):
     """
     Implements a three-layer tensorflow neural network: LINEAR->RELU->LINEAR->RELU->LINEAR->SOFTMAX.
     
@@ -646,14 +660,7 @@ def model(XtargetTrain, YtargetTrain, XtargetTest, YtargetTest, learning_rate = 
         print("Parameters have been trained!")
         
         #trying to print outputs
-        '''
-        Xx = tf.placeholder(shape=[XtargetTrain.shape[0],None],dtype=tf.float32,name="Xx")
-        print(Xx)
-        predict = forward_propagation(Xx,parameters)
-        classify = tf.nn.softmax(tf.transpose(predict))
-        hopefull= pd.DataFrame(data=sess.run(classify, feed_dict={Xx: XtargetTest}))
-        print(hopefull, hopefull.iloc[0], hopefull.iloc[1])
-        '''
+        
         Xxx = tf.placeholder(shape=[X_test.shape[0],None],dtype=tf.float32,name="Xxx")
         #print(Xxx)
         predictTest = forward_propagation(Xxx,parameters)
@@ -708,7 +715,7 @@ answers.index.name = "id"
 #df.index.name = 'foo'
 #%% export as csv
 
-answers.to_csv('/Users/brendontucker/Kaggle/StatoilCCORE/submissions/subOne.csv')
+answers.to_csv('/Users/brendontucker/KaggleData/StatoilCCORE/submissions/subTwo.csv')
 
 
 #%% create submission
