@@ -30,10 +30,8 @@ still not using the "right" cost function either...
 #%% IMPORTS
 
 import pandas as pd
-import pickle
 import math
 import numpy as np
-import h5py
 import matplotlib.pyplot as plt
 import tensorflow as tf
 from tensorflow.python.framework import ops
@@ -220,7 +218,7 @@ YtargetTest = YtargetTest.astype('int64')
 
 
 YtargetTest = convert_to_one_hot(YtargetTest, 2)
-#%% PREPROCESSING (eventually this will have to be its own file)
+#%% PREPROCESSING (eventually this will have to be its own function/file)
 
 # BASIC PREPROCESSING VARS
 
@@ -547,15 +545,56 @@ def compute_cost(Z3, Y):
     labels = tf.transpose(Y)
     #print('lables are:', labels)
     
+    
     ### START CODE HERE ### (1 line of code)
     cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=labels))
-    #cost =  tf.reduce_mean(tf.losses.log_loss(labels=labels, predictions=logits))
-    #print('cost is of type:', type(cost), 'cost is:', cost)
     ### END CODE HERE ###
     
     return cost
 
+def compute_cost_regularized(Z3, Y, parameters, lambd):
+    """
+    Computes the cost
+    
+    Arguments:
+    Z3 -- output of forward propagation (output of the last LINEAR unit), of shape (6, number of examples)
+    Y -- "true" labels vector placeholder, same shape as Z3
+    
+    Returns:
+    cost - Tensor of the cost function
+    """
+    
+    # to fit the tensorflow requirement for tf.nn.softmax_cross_entropy_with_logits(...,...)
+    logits = tf.transpose(Z3)
+    #print('logits are:',logits)
+    labels = tf.transpose(Y)
+    #print('lables are:', labels)
+    
+    #adding L2 Regularization 
+    
+    # Retrieve the parameters from the dictionary "parameters" 
+    #W1 = parameters['W1']
+    #W2 = parameters['W2']
+    #W3 = parameters['W3']
+    #m = Y.shape[1]
+    l1_regularizer = tf.contrib.layers.l1_regularizer(scale=0.0000005, scope=None)
+    weights = tf.trainable_variables()
+    regularization_penalty = tf.contrib.layers.apply_regularization(l1_regularizer, weights)
+    
+    #L2_regularization_cost = lambd*(tf.nn.l2_normalize(W1, dim=0)+tf.nn.l2_normalize(W2, dim=0)+tf.nn.l2_normalize(W3, dim=0)) / (m*2)
+    #L2_regularization_cost = lambd*(tf.reduce_sum(tf.square(W1))+tf.reduce_sum(tf.square(W2))+tf.reduce_sum(tf.square(W3))) / (m*2)    
+    
+    #end L2
+    
+    ### START CODE HERE ### (1 line of code)
+    softMax_cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=labels))
+    cost = regularization_penalty + softMax_cost
+    ### END CODE HERE ###
+    
+    return cost
 
+    
+    
 #%% here is the meat of the program... going ot spend lots of time looking at 
     #this I believe 
 # learning_rate = 0.0001    
@@ -603,7 +642,10 @@ def model(XtargetTrain, YtargetTrain, XtargetTest, YtargetTest, learning_rate = 
     
     # Cost function: Add cost function to tensorflow graph
     ### START CODE HERE ### (1 line)
-    cost = compute_cost(Z3, Y)
+    #cost = compute_cost(Z3, Y)
+    
+    cost = compute_cost_regularized(Z3, Y, parameters, lambd=0.1)
+    
     #print('cost is:', cost) #issue might be optimizer so this should help figure out where nan is coming from
     ### END CODE HERE ###
     
@@ -660,13 +702,13 @@ def model(XtargetTrain, YtargetTrain, XtargetTest, YtargetTest, learning_rate = 
         print("Parameters have been trained!")
         
         #trying to print outputs
-        
+        '''
         Xxx = tf.placeholder(shape=[X_test.shape[0],None],dtype=tf.float32,name="Xxx")
         #print(Xxx)
         predictTest = forward_propagation(Xxx,parameters)
         classify = tf.nn.softmax(tf.transpose(predictTest))
         hopefull = pd.DataFrame(data=sess.run(classify, feed_dict={Xxx: X_test}))
-        
+        '''
         #end of trying to print outputs
         
         
@@ -680,7 +722,8 @@ def model(XtargetTrain, YtargetTrain, XtargetTest, YtargetTest, learning_rate = 
         print("Train Accuracy:", accuracy.eval({X: XtargetTrain, Y: YtargetTrain}))
         print("Test Accuracy:", accuracy.eval({X: XtargetTest, Y: YtargetTest}))
         
-        return parameters, hopefull
+        return parameters
+        #return parameters, hopefull
 
 
 
