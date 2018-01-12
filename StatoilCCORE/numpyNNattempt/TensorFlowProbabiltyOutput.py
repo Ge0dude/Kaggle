@@ -552,6 +552,7 @@ def compute_cost(Z3, Y):
     
     return cost
 
+#%%
 def compute_cost_regularized(Z3, Y, parameters, lambd):
     """
     Computes the cost
@@ -571,16 +572,15 @@ def compute_cost_regularized(Z3, Y, parameters, lambd):
     #print('lables are:', labels)
     
     #adding L2 Regularization 
+    l2_regularizer = tf.contrib.layers.l2_regularizer(scale=0.0000005, scope=None)
+    weights = tf.trainable_variables()
+    regularization_penalty = tf.contrib.layers.apply_regularization(l2_regularizer, weights)
     
-    # Retrieve the parameters from the dictionary "parameters" 
-    #W1 = parameters['W1']
-    #W2 = parameters['W2']
-    #W3 = parameters['W3']
-    #m = Y.shape[1]
+    '''
     l1_regularizer = tf.contrib.layers.l1_regularizer(scale=0.0000005, scope=None)
     weights = tf.trainable_variables()
     regularization_penalty = tf.contrib.layers.apply_regularization(l1_regularizer, weights)
-    
+    '''
     #L2_regularization_cost = lambd*(tf.nn.l2_normalize(W1, dim=0)+tf.nn.l2_normalize(W2, dim=0)+tf.nn.l2_normalize(W3, dim=0)) / (m*2)
     #L2_regularization_cost = lambd*(tf.reduce_sum(tf.square(W1))+tf.reduce_sum(tf.square(W2))+tf.reduce_sum(tf.square(W3))) / (m*2)    
     
@@ -600,7 +600,7 @@ def compute_cost_regularized(Z3, Y, parameters, lambd):
 # learning_rate = 0.0001    
 
 def model(XtargetTrain, YtargetTrain, XtargetTest, YtargetTest, learning_rate = 0.0001,
-          num_epochs = 2000, minibatch_size = 32, print_cost = True):
+          num_epochs = 1000, minibatch_size = 32, print_cost = True):
     """
     Implements a three-layer tensorflow neural network: LINEAR->RELU->LINEAR->RELU->LINEAR->SOFTMAX.
     
@@ -702,13 +702,13 @@ def model(XtargetTrain, YtargetTrain, XtargetTest, YtargetTest, learning_rate = 
         print("Parameters have been trained!")
         
         #trying to print outputs
-        '''
+        
         Xxx = tf.placeholder(shape=[X_test.shape[0],None],dtype=tf.float32,name="Xxx")
         #print(Xxx)
         predictTest = forward_propagation(Xxx,parameters)
         classify = tf.nn.softmax(tf.transpose(predictTest))
         hopefull = pd.DataFrame(data=sess.run(classify, feed_dict={Xxx: X_test}))
-        '''
+        
         #end of trying to print outputs
         
         
@@ -722,8 +722,8 @@ def model(XtargetTrain, YtargetTrain, XtargetTest, YtargetTest, learning_rate = 
         print("Train Accuracy:", accuracy.eval({X: XtargetTrain, Y: YtargetTrain}))
         print("Test Accuracy:", accuracy.eval({X: XtargetTest, Y: YtargetTest}))
         
-        return parameters
-        #return parameters, hopefull
+        #return parameters
+        return parameters, hopefull
 
 
 
@@ -731,7 +731,8 @@ def model(XtargetTrain, YtargetTrain, XtargetTest, YtargetTest, learning_rate = 
 #%% EXECUTE TENSORFLOW NEURAL NETWORK 
 
 # create_placeholders(11250, 2)
-parameters, answers = model (XtargetTrain, YtargetTrain, XtargetTest, YtargetTest)
+parameters, answers = model (XtargetTrain, YtargetTrain, XtargetTest, 
+                             YtargetTest,learning_rate = 0.0001, num_epochs=1500)
 
 #%% save parameters of model to a file 
 
@@ -758,7 +759,7 @@ answers.index.name = "id"
 #df.index.name = 'foo'
 #%% export as csv
 
-answers.to_csv('/Users/brendontucker/KaggleData/StatoilCCORE/submissions/subTwo.csv')
+answers.to_csv('/Users/brendontucker/KaggleData/StatoilCCORE/submissions/subFour.csv')
 
 
 #%% create submission
