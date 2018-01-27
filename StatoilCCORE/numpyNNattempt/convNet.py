@@ -112,19 +112,10 @@ X_dev = X_dev.T
 
 #%% Y TEST TARGET VARIABLE SET UP
 
-'''
-YtargetTrain = np.zeros(shape=(len(train),1))
-for x in range(len(train)):
-    YtargetTrain[x] = train.iloc[x][4]
-#had to add .astype to fix convertohotones error 
-YtargetTrain = YtargetTrain.astype('int64')
-'''
-
 Y_dev = np.zeros(shape=(len(dev),1))
 for x in range(len(dev)):
     Y_dev[x] = dev.iloc[x][4]
 Y_dev = Y_dev.astype('int64')
-
 
 Y_dev = convert_to_one_hot(Y_dev, 2)
 
@@ -166,7 +157,20 @@ def initialize_parameters():
     tf.set_random_seed(1)                              # so that your "random" numbers match ours
         
     ### START CODE HERE ### (approx. 2 lines of code)
-    W1 = tf.get_variable("W1", [4, 4, 3, 8], initializer=tf.contrib.layers.xavier_initializer(seed=0))
+    '''
+    ValueError: Dimensions must be equal, but are 1 and 3 for 'Conv2D' (op: 'Conv2D') 
+    with input shapes: [?,1,11250,1], [4,4,3,8].
+    
+    W1 = tf.get_variable("W1", [25, 11250], initializer = tf.contrib.layers.xavier_initializer(seed=1))
+    b1 = tf.get_variable("b1", [25, 1], initializer = tf.zeros_initializer())
+    W2 = tf.get_variable("W2", [12, 25], initializer = tf.contrib.layers.xavier_initializer(seed=1))
+    b2 = tf.get_variable("b2", [12, 1], initializer = tf.zeros_initializer())
+    W3 = tf.get_variable("W3", [2, 12], initializer = tf.contrib.layers.xavier_initializer(seed=1))
+    b3 = tf.get_variable("b3", [2, 1], initializer = tf.zeros_initializer())
+    '''
+    
+    
+    W1 = tf.get_variable("W1", [4, 4, 1, 8], initializer=tf.contrib.layers.xavier_initializer(seed=0))
     W2 = tf.get_variable("W2", [2, 2, 8, 16], initializer=tf.contrib.layers.xavier_initializer(seed=0))
     ### END CODE HERE ###
 
@@ -227,12 +231,56 @@ def compute_cost(Z3, Y):
     cost - Tensor of the cost function
     """
     
+    # add regularization here 
+    
     ### START CODE HERE ### (1 line of code)
     cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=Z3, labels=Y))
     ### END CODE HERE ###
     
     return cost
 
+def random_mini_batches(X, Y, mini_batch_size = 64, seed = 0):
+    """
+    Creates a list of random minibatches from (X, Y)
+    
+    Arguments:
+    X -- input data, of shape (input size, number of examples)
+    Y -- true "label" vector (containing 0 if cat, 1 if non-cat), of shape (1, number of examples)
+    mini_batch_size - size of the mini-batches, integer
+    seed -- this is only for the purpose of grading, so that you're "random minibatches are the same as ours.
+    
+    Returns:
+    mini_batches -- list of synchronous (mini_batch_X, mini_batch_Y)
+    """
+    
+    m = X.shape[1]                  # number of training examples
+    mini_batches = []
+    np.random.seed(seed)
+    
+    # Step 1: Shuffle (X, Y)
+    permutation = list(np.random.permutation(m))
+    shuffled_X = X[:, permutation]
+    shuffled_Y = Y[:, permutation].reshape((Y.shape[0],m))
+
+    # Step 2: Partition (shuffled_X, shuffled_Y). Minus the end case.
+    num_complete_minibatches = math.floor(m/mini_batch_size) # number of mini batches of size mini_batch_size in your partitionning
+    for k in range(0, num_complete_minibatches):
+        mini_batch_X = shuffled_X[:, k * mini_batch_size : k * mini_batch_size + mini_batch_size]
+        mini_batch_Y = shuffled_Y[:, k * mini_batch_size : k * mini_batch_size + mini_batch_size]
+        mini_batch = (mini_batch_X, mini_batch_Y)
+        mini_batches.append(mini_batch)
+    
+    # Handling the end case (last mini-batch < mini_batch_size)
+    if m % mini_batch_size != 0:
+        mini_batch_X = shuffled_X[:, num_complete_minibatches * mini_batch_size : m]
+        mini_batch_Y = shuffled_Y[:, num_complete_minibatches * mini_batch_size : m]
+        mini_batch = (mini_batch_X, mini_batch_Y)
+        mini_batches.append(mini_batch)
+    
+    return mini_batches
+
+#%% model
+    
 def model(X_train, Y_train, X_test, Y_test, learning_rate=0.009,
           num_epochs=100, minibatch_size=64, print_cost=True):
     """
@@ -258,7 +306,7 @@ def model(X_train, Y_train, X_test, Y_test, learning_rate=0.009,
     ops.reset_default_graph()                         # to be able to rerun the model without overwriting tf variables
     tf.set_random_seed(1)                             # to keep results consistent (tensorflow seed)
     seed = 3                                          # to keep results consistent (numpy seed)
-    (m, n_H0, n_W0, n_C0) = X_train.shape             # don't think this will work for my already-flattened data
+    #(m, n_H0, n_W0, n_C0) = X_train.shape             # don't think this will work for my already-flattened data
     m = len(X_train)
     n_H0 = 1
     n_W0 = 11250
@@ -278,6 +326,11 @@ def model(X_train, Y_train, X_test, Y_test, learning_rate=0.009,
     
     # Forward propagation: Build the forward propagation in the tensorflow graph
     ### START CODE HERE ### (1 line)
+    '''
+    Cannot feed value of shape (11250, 64) 
+    for Tensor 'Placeholder:0', which has shape '(?, 1, 11250, 1)'
+    '''
+    
     Z3 = forward_propagation(X, parameters)
     ### END CODE HERE ###
     
@@ -348,7 +401,7 @@ def model(X_train, Y_train, X_test, Y_test, learning_rate=0.009,
         print("Test Accuracy:", test_accuracy)
                 
         return train_accuracy, test_accuracy, parameters
-    
+
 #%% Run model 
     
-_, _, parameters = model(X_train, Y_train, X_test, Y_test)
+_, _, parameters = model(X_train, Y_train, X_dev, Y_dev)

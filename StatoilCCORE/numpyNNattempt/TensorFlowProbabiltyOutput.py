@@ -25,6 +25,12 @@ going to try trainng 2000 epochs on preprocessed data and submit that version an
 is still so bad... 
 
 still not using the "right" cost function either... 
+
+tyring to add dropout now.... something called pooling is coming to mind, maybe I 
+could add that too? Do I need to make the network bigger if I keep adding regularization? 
+
+dropout added in form of:
+    https://stackoverflow.com/questions/40879504/how-to-apply-drop-out-in-tensorflow-to-improve-the-accuracy-of-neural-network
 """
 
 #%% IMPORTS
@@ -372,7 +378,7 @@ def initialize_parameters():
     
     return parameters
 
-def forward_propagation(X, parameters):
+def forward_propagation(X, parameters, keep_prob):
     """
     Implements the forward propagation for the model: LINEAR -> RELU -> LINEAR -> RELU -> LINEAR -> SOFTMAX
     
@@ -397,8 +403,9 @@ def forward_propagation(X, parameters):
     Z1 = tf.add(tf.matmul(W1, X), b1)                      # Z1 = np.dot(W1, X) + b1
     A1 = tf.nn.relu(Z1)                                    # A1 = relu(Z1)
     Z2 = tf.add(tf.matmul(W2, A1), b2)                     # Z2 = np.dot(W2, a1) + b2
-    A2 = tf.nn.relu(Z2)                                    # A2 = relu(Z2)
-    Z3 = tf.add(tf.matmul(W3, A2), b3)                     # Z3 = np.dot(W3,Z2) + b3
+    A2 = tf.nn.relu(Z2)    
+    drop_out = tf.nn.dropout(A2, keep_prob)                                # A2 = relu(Z2)
+    Z3 = tf.add(tf.matmul(W3, drop_out), b3)                     # Z3 = np.dot(W3,Z2) + b3
     ### END CODE HERE ###
     
     return Z3
@@ -628,6 +635,7 @@ def model(XtargetTrain, YtargetTrain, XtargetTest, YtargetTest, learning_rate = 
     # Create Placeholders of shape (n_x, n_y)
     ### START CODE HERE ### (1 line)
     X, Y = create_placeholders(n_x, n_y) #don't think I need to change this
+    keep_prob = tf.placeholder(tf.float32) 
     ### END CODE HERE ###
 
     # Initialize parameters
@@ -637,7 +645,7 @@ def model(XtargetTrain, YtargetTrain, XtargetTest, YtargetTest, learning_rate = 
     
     # Forward propagation: Build the forward propagation in the tensorflow graph
     ### START CODE HERE ### (1 line)
-    Z3 = forward_propagation(X, parameters) #should be the same 
+    Z3 = forward_propagation(X, parameters, keep_prob) #should be the same 
     ### END CODE HERE ###
     
     # Cost function: Add cost function to tensorflow graph
@@ -679,7 +687,7 @@ def model(XtargetTrain, YtargetTrain, XtargetTest, YtargetTest, learning_rate = 
                 # IMPORTANT: The line that runs the graph on a minibatch.
                 # Run the session to execute the "optimizer" and the "cost", the feedict should contain a minibatch for (X,Y).
                 ### START CODE HERE ### (1 line)
-                _ , minibatch_cost = sess.run([optimizer, cost], feed_dict={X: minibatch_X, Y: minibatch_Y})
+                _ , minibatch_cost = sess.run([optimizer, cost], feed_dict={X: minibatch_X, Y: minibatch_Y, keep_prob : 0.6})
                 ### END CODE HERE ###
                 
                 epoch_cost += minibatch_cost / num_minibatches
@@ -702,13 +710,13 @@ def model(XtargetTrain, YtargetTrain, XtargetTest, YtargetTest, learning_rate = 
         print("Parameters have been trained!")
         
         #trying to print outputs
-        
+        '''
         Xxx = tf.placeholder(shape=[X_test.shape[0],None],dtype=tf.float32,name="Xxx")
         #print(Xxx)
         predictTest = forward_propagation(Xxx,parameters)
         classify = tf.nn.softmax(tf.transpose(predictTest))
         hopefull = pd.DataFrame(data=sess.run(classify, feed_dict={Xxx: X_test}))
-        
+        '''
         #end of trying to print outputs
         
         
@@ -718,22 +726,31 @@ def model(XtargetTrain, YtargetTrain, XtargetTest, YtargetTest, learning_rate = 
         correct_prediction = tf.equal(tf.argmax(Z3), tf.argmax(Y))
         # Calculate accuracy on the test set
         accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
-
-        print("Train Accuracy:", accuracy.eval({X: XtargetTrain, Y: YtargetTrain}))
-        print("Test Accuracy:", accuracy.eval({X: XtargetTest, Y: YtargetTest}))
         
-        #return parameters
-        return parameters, hopefull
+        
+        #feed_dict={X: XtargetTrain, Y: YtargetTrain}
+        #print("Train Accuracy:", sess.run(accuracy, feed_dict={X: XtargetTrain, Y: YtargetTrain}))
+        #print("Test Accuracy:", sess.run(accuracy, feed_dict={X: XtargetTrain, Y: YtargetTrain}))
+        
+        print("Train Accuracy:", accuracy.eval({X: XtargetTrain, Y: YtargetTrain, keep_prob : 0.6}))
+        print("Test Accuracy:", accuracy.eval({X: XtargetTest, Y: YtargetTest, keep_prob : 0.6}))
+        
+        
+        return parameters
+        #return parameters, hopefull
 
 
 
 
 #%% EXECUTE TENSORFLOW NEURAL NETWORK 
 
-# create_placeholders(11250, 2)
-parameters, answers = model (XtargetTrain, YtargetTrain, XtargetTest, 
-                             YtargetTest,learning_rate = 0.0001, num_epochs=1500)
 
+parameters, answers = model (XtargetTrain, YtargetTrain, XtargetTest, 
+                             YtargetTest,learning_rate = 0.000016, num_epochs=5000)
+'''
+parameters = model (XtargetTrain, YtargetTrain, XtargetTest, 
+                             YtargetTest,learning_rate = 0.0001, num_epochs=10)
+'''
 #%% save parameters of model to a file 
 
 #%% 
