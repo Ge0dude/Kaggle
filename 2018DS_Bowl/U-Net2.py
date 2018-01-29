@@ -1,13 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Fri Jan 19 08:16:59 2018
+Created on Sat Jan 27 18:05:05 2018
 
 @author: brendontucker
 
 taken from:
 https://www.kaggle.com/keegil/keras-u-net-starter-lb-0-277
 
+going to try and play with a few things before tyring to move on to the "TernausNet"
+
+1) doubling size from 128 to 256 took the average epoch time from ~ 3 minutes
+    to ~ 13... guess that is a 2*2 thing lol. 
+2) with 64 px early stoppage occured before 128 which occured before 256. 
 """
 #%% IMPORTS
 
@@ -39,8 +44,8 @@ from keras import backend as K
 import tensorflow as tf
 
 #%% Set some parameters
-IMG_WIDTH = 128
-IMG_HEIGHT = 128
+IMG_WIDTH = 256
+IMG_HEIGHT = 256
 IMG_CHANNELS = 3
 TRAIN_PATH = '/Users/brendontucker/KaggleData/2018DS_Bowl/stage1_train'
 TEST_PATH = '/Users/brendontucker/KaggleData/2018DS_Bowl/stage1_test'
@@ -254,4 +259,4 @@ sub = pd.DataFrame()
 sub['ImageId'] = new_test_ids
 sub['EncodedPixels'] = pd.Series(rles).apply(lambda x: ' '.join(str(y) for y in x))
 #answers.to_csv('/Users/brendontucker/KaggleData/StatoilCCORE/submissions/subFour.csv')
-sub.to_csv('/Users/brendontucker/KaggleData/2018DS_Bowl/sumissions/subTwo', index=False)
+sub.to_csv('/Users/brendontucker/KaggleData/2018DS_Bowl/sumissions/subFour', index=False)

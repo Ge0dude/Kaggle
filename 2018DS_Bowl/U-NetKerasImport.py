@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Fri Jan 19 08:16:59 2018
+Created on Sun Jan 28 12:30:24 2018
 
 @author: brendontucker
-
-taken from:
-https://www.kaggle.com/keegil/keras-u-net-starter-lb-0-277
-
 """
-#%% IMPORTS
+
+from keras.applications.vgg16 import VGG16
+from keras.preprocessing import image
+from keras.applications.vgg16 import preprocess_input
+import numpy as np
 
 import os
 import sys
@@ -39,8 +39,8 @@ from keras import backend as K
 import tensorflow as tf
 
 #%% Set some parameters
-IMG_WIDTH = 128
-IMG_HEIGHT = 128
+IMG_WIDTH = 64
+IMG_HEIGHT = 64
 IMG_CHANNELS = 3
 TRAIN_PATH = '/Users/brendontucker/KaggleData/2018DS_Bowl/stage1_train'
 TEST_PATH = '/Users/brendontucker/KaggleData/2018DS_Bowl/stage1_test'
@@ -113,6 +113,37 @@ def mean_iou(y_true, y_pred):
 
 #%% build model //yay blackbox, can't wait to actually read the paper 
 # Build U-Net model
+    
+#%%
+inputs = Input((IMG_HEIGHT, IMG_WIDTH, IMG_CHANNELS))
+
+#from Keras Applications
+model = VGG16(weights='imagenet', include_top=False)
+#from Kaggle kernel
+model.compile(optimizer='adam', loss='binary_crossentropy', metrics=[mean_iou])
+model.summary()
+#seems to work! 
+
+#%%
+#have to convert images to correct representation for V
+
+#%%
+#from Keras App 
+#img_path = 'elephant.jpg'
+#img = image.load_img(img_path, target_size=(224, 224))
+#x = image.img_to_array(img)
+#x = np.expand_dims(x, axis=0)
+#x = preprocess_input(x)
+#%%
+features = model.predict(x)
+#not from Keras Applications
+outputs = Conv2D(1, (1, 1), activation='sigmoid') (c9)
+
+model = Model(inputs=[inputs], outputs=[outputs])
+model.compile(optimizer='adam', loss='binary_crossentropy', metrics=[mean_iou])
+model.summary()
+
+#%%
 inputs = Input((IMG_HEIGHT, IMG_WIDTH, IMG_CHANNELS))
 s = Lambda(lambda x: x / 255) (inputs)
 
@@ -254,4 +285,4 @@ sub = pd.DataFrame()
 sub['ImageId'] = new_test_ids
 sub['EncodedPixels'] = pd.Series(rles).apply(lambda x: ' '.join(str(y) for y in x))
 #answers.to_csv('/Users/brendontucker/KaggleData/StatoilCCORE/submissions/subFour.csv')
-sub.to_csv('/Users/brendontucker/KaggleData/2018DS_Bowl/sumissions/subTwo', index=False)
+sub.to_csv('/Users/brendontucker/KaggleData/2018DS_Bowl/sumissions/subThree', index=False)
